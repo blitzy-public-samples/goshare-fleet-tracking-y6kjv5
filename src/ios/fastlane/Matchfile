@@ -1,0 +1,73 @@
+# Matchfile for FleetTracker iOS app
+# fastlane-match version: 2.217.0
+# Purpose: Manages iOS code signing certificates and provisioning profiles
+
+# Git repository URL for storing encrypted certificates and profiles
+git_url(ENV["MATCH_GIT_URL"])
+
+# Storage mode for certificates (git)
+storage_mode("git")
+
+# Git branch for certificate storage
+git_branch("master")
+
+# Apple Developer Portal username
+username(ENV["APPLE_ID"])
+
+# Type-specific configurations for different environments
+type_mappings do
+  # Development environment configuration
+  development do
+    app_identifier(["com.fleettracker.ios.dev"])
+    type("development")
+    readonly(false)
+    force_for_new_devices(true)
+  end
+
+  # Staging environment configuration
+  staging do
+    app_identifier(["com.fleettracker.ios.staging"])
+    type("adhoc")
+    readonly(true)
+    force(false)
+  end
+
+  # Production environment configuration
+  production do
+    app_identifier(["com.fleettracker.ios"])
+    type("appstore")
+    readonly(true)
+    force(false)
+  end
+end
+
+# Security settings
+# Use OpenSSL AES-256 encryption for certificate storage
+encryption_key_path(ENV["MATCH_ENCRYPTION_KEY_PATH"])
+
+# Enable shallow clone to speed up git operations
+shallow_clone(true)
+
+# Skip confirmation prompts in CI environment
+skip_confirmation(true)
+
+# Platform specification
+platform :ios
+
+# Team ID from Apple Developer account
+team_id(ENV["APPLE_DEVELOPER_TEAM_ID"])
+
+# Additional security settings
+verbose(true) # Enable detailed logging
+readonly(ENV["CI"] == "true") # Read-only mode in CI environment
+api_key_path(ENV["APP_STORE_CONNECT_API_KEY_PATH"]) # Path to App Store Connect API key for authentication
+
+# Certificate and profile cleanup settings
+clean_expired_certs(true) # Remove expired certificates
+skip_docs(true) # Skip documentation generation
+skip_git_hooks(true) # Skip git hooks in CI environment
+
+# Advanced git settings
+git_basic_authorization(ENV["MATCH_GIT_BASIC_AUTH"]) # Basic auth for git repository
+git_full_name("FleetTracker CI") # Git commit author name
+git_user_email("ci@fleettracker.com") # Git commit author email
