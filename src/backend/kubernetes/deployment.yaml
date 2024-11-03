@@ -1,0 +1,229 @@
+# Human Tasks:
+# 1. Verify container image versions and update tags before deployment
+# 2. Configure resource quotas for the namespace
+# 3. Set up horizontal pod autoscaling thresholds
+# 4. Configure pod disruption budgets for high availability
+# 5. Set up network policies for pod-to-pod communication
+# 6. Configure monitoring and logging agents
+
+# Requirement: Core Backend Services - Deployment configuration for Node.js and Python microservices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-services
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: backend
+    tier: backend-services
+  annotations:
+    # Requirement: High Availability - Zero-downtime deployment configuration
+    kubernetes.io/change-cause: "Initial deployment of backend services"
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+    prometheus.io/path: "/metrics"
+
+spec:
+  # Requirement: System Performance - Initial replica count for high availability
+  replicas: 3
+
+  # Requirement: High Availability - Rolling update strategy for zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  # Pod selector configuration
+  selector:
+    matchLabels:
+      app: fleet-tracking
+      component: backend
+      tier: backend-services
+
+  template:
+    metadata:
+      labels:
+        app: fleet-tracking
+        component: backend
+        tier: backend-services
+      annotations:
+        # Requirement: System Performance - Pod configuration for optimal performance
+        checksum/config: "${CONFIG_CHECKSUM}"
+        checksum/secret: "${SECRET_CHECKSUM}"
+
+    spec:
+      # Requirement: High Availability - Pod scheduling and anti-affinity rules
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - fleet-tracking
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+        # Requirement: Core Backend Services - API service container configuration
+        - name: api-service
+          image: fleet-tracker/backend-api:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+
+          # Requirement: System Performance - Resource allocation for optimal performance
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+
+          # Requirement: High Availability - Health check configuration
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+
+          # Environment configuration from ConfigMap and Secrets
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+
+        # Requirement: Core Backend Services - Analytics service container configuration
+        - name: analytics-service
+          image: fleet-tracker/analytics:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+            - name: metrics
+              containerPort: 9091
+              protocol: TCP
+
+          # Requirement: System Performance - Resource allocation for data processing
+          resources:
+            requests:
+              cpu: "1000m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+
+          # Requirement: High Availability - Health check configuration
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+
+          # Environment configuration from ConfigMap and Secrets
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
+
+      # Requirement: High Availability - Volume configuration for configuration and secrets
+      volumes:
+        - name: config-volume
+          configMap:
+            name: backend-config
+        - name: secrets-volume
+          secret:
+            secretName: backend-secrets
+
+      # Security context configuration
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+
+      # Service account configuration
+      serviceAccountName: backend-service-account
+
+      # Termination grace period
+      terminationGracePeriodSeconds: 60
+
+---
+# Requirement: Scalability Architecture - Horizontal Pod Autoscaling configuration
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-services-hpa
+  namespace: fleet-tracking
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-services
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+
+---
+# Requirement: High Availability - Pod Disruption Budget for availability guarantees
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-services-pdb
+  namespace: fleet-tracking
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: fleet-tracking
+      component: backend
+      tier: backend-services
