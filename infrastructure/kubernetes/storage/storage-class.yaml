@@ -1,0 +1,81 @@
+# Human Tasks:
+# 1. Replace ${ENV} with the target environment (dev/staging/prod)
+# 2. Replace ${EFS_ID} with the AWS EFS filesystem ID for shared storage
+# 3. Ensure AWS EBS CSI driver v1.12.0 is installed in the cluster
+# 4. Ensure AWS EFS CSI driver v1.5.0 is installed in the cluster
+# 5. Verify IAM roles and policies are configured for CSI drivers
+
+---
+# Requirement: Database Storage - High-performance GP3 storage class for PostgreSQL and MongoDB
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    eks.amazonaws.com/component: "storage"
+    kubernetes.io/description: "Storage classes for Fleet Tracking System"
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+  fsType: ext4
+  iopsPerGB: "3000"
+  throughput: "125"
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+
+---
+# Requirement: Database Storage - Cost-effective GP2 storage for Redis caching
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: gp2
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    eks.amazonaws.com/component: "storage"
+    kubernetes.io/description: "Storage classes for Fleet Tracking System"
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp2
+  encrypted: "true"
+  fsType: ext4
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+
+---
+# Requirement: File Storage - EFS-based storage class for cross-AZ shared file storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: efs-sc
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+    eks.amazonaws.com/component: "storage"
+    kubernetes.io/description: "Storage classes for Fleet Tracking System"
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+provisioner: efs.csi.aws.com
+parameters:
+  provisioningMode: efs-ap
+  fileSystemId: ${EFS_ID}
+  directoryPerms: "700"
+  gidRangeStart: "1000"
+  gidRangeEnd: "2000"
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
