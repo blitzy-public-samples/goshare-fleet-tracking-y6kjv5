@@ -1,0 +1,53 @@
+// Human Tasks:
+// 1. Ensure React Native development environment is properly set up
+// 2. Verify Android SDK installation and environment variables
+// 3. Configure local.properties with Android SDK path
+// 4. Set up Google Play Services in Google Cloud Console for location services
+// 5. Configure Firebase project and place google-services.json in app directory
+
+// Set root project name for fleet tracking application
+rootProject.name = "FleetTracker"
+
+// React Native Gradle plugin version 0.71.8
+apply plugin: "com.facebook.react"
+
+// Include the app project with offline storage and location tracking capabilities
+include ':app'
+
+// Configure project-wide repository settings
+pluginManagement {
+    repositories {
+        // Google's Maven repository for Play Services and location APIs
+        google()
+        // Central Maven repository for React Native and support libraries
+        mavenCentral()
+        // Gradle plugin portal for additional build plugins
+        gradlePluginPortal()
+    }
+}
+
+// Configure dependency repositories for all projects
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositories {
+        // Google's Maven repository for Play Services and location APIs
+        google()
+        // Central Maven repository for React Native and support libraries
+        mavenCentral()
+    }
+}
+
+// Include React Native build configuration
+includeBuild('../node_modules/react-native-gradle-plugin') {
+    // Configure React Native specific settings for GPS integration
+    dependencySubstitution {
+        substitute(module("com.facebook.react:react-native-gradle-plugin"))
+                .using(project(":"))
+    }
+}
+
+// Set Flipper version for debugging support
+ext {
+    // Flipper version 0.125.0 for debugging capabilities
+    FLIPPER_VERSION = "0.125.0"
+}
