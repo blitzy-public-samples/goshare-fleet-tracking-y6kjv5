@@ -1,0 +1,38 @@
+# Build artifacts and directories
+*.build/
+DerivedData/
+.build/
+coverage/
+
+# Xcode user-specific files
+*.xcodeproj/xcuserdata/
+*.xcworkspace/xcuserstate
+
+# Dependency management
+Pods/
+Carthage/Build/
+.swiftpm/
+
+# CI/CD artifacts
+fastlane/report.xml
+fastlane/test_output/
+
+# System files
+.DS_Store
+
+# Sensitive credentials and certificates
+*.keychain
+*.mobileprovision
+*.cer
+*.p12
+*.appstoreconnect.json
+GoogleService-Info.plist
+
+# Environment configuration
+.env
+
+# HUMAN TASKS:
+# 1. Ensure all developers have their own local copies of sensitive files (certificates, provisioning profiles)
+# 2. Set up secure credential sharing system for the team
+# 3. Configure environment-specific build settings in Xcode
+# 4. Set up proper code signing workflow with fastlane match
