@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Human Tasks:
+    1. Replace REACT_APP_MAPS_API_KEY with your Google Maps API key in the environment variables
+    2. Configure SSL certificates for HTTPS
+    3. Set up Content Security Policy in web server configuration
+    4. Configure service worker registration
+    5. Set up proper DNS records for preconnect domains -->
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="theme-color" content="#1976d2" />
+    <meta name="description" content="Live Fleet Tracking System - Real-time fleet management and tracking dashboard" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="Strict-Transport-Security" content="max-age=31536000; includeSubDomains" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
+    <!-- Accessibility -->
+    <meta name="application-name" content="Live Fleet Tracking System" />
+    <meta name="apple-mobile-web-app-title" content="Live Fleet Tracking System" />
+    
+    <!-- Preconnect to required domains -->
+    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- DNS prefetch -->
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    
+    <!-- Favicon and PWA icons -->
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    
+    <!-- PWA manifest -->
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="%PUBLIC_URL%/static/js/main.js" as="script" />
+    <link rel="preload" href="%PUBLIC_URL%/static/css/main.css" as="style" />
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" as="style" />
+    
+    <!-- Material-UI Font -->
+    <link 
+      rel="stylesheet" 
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap"
+      media="print" 
+      onload="this.media='all'" 
+    />
+    
+    <title>Live Fleet Tracking System</title>
+    
+    <!-- Responsive design support -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-width: 320px;
+        max-width: 1920px;
+        margin: 0 auto;
+      }
+      #root {
+        min-height: 100vh;
+      }
+      .skip-link {
+        position: absolute;
+        left: -9999px;
+        z-index: 999;
+        padding: 1em;
+        background-color: white;
+        color: black;
+        text-decoration: none;
+      }
+      .skip-link:focus {
+        left: 50%;
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Accessibility skip link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <!-- Main application container -->
+    <div id="root" role="application" aria-label="Live Fleet Tracking System"></div>
+    
+    <!-- Main content landmark -->
+    <main id="main-content" role="main" style="display: none;">
+      <!-- React app will render here -->
+    </main>
+    
+    <!-- Google Maps API -->
+    <script 
+      async 
+      defer 
+      src="https://maps.googleapis.com/maps/api/js?key=%REACT_APP_MAPS_API_KEY%&libraries=places,geometry"
+    ></script>
+    
+    <!-- PWA service worker registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+            .then(registration => {
+              console.log('ServiceWorker registration successful');
+            })
+            .catch(error => {
+              console.error('ServiceWorker registration failed:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
