@@ -1,0 +1,78 @@
+# Kubernetes ConfigMap for Web Dashboard Environment Configuration
+# Version: v1
+# Supports: Fleet Tracking System Web Dashboard
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-dashboard-config
+  namespace: ${NAMESPACE}
+  labels:
+    app: web-dashboard
+    environment: ${ENVIRONMENT}
+    component: frontend
+    managed-by: terraform
+  annotations:
+    description: "Environment configuration for web dashboard deployment"
+    lastUpdated: "${TIMESTAMP}"
+
+data:
+  # REQ-1.1: API Integration - Backend service API endpoints with HTTPS and versioning
+  # Configures secure communication with backend services using HTTPS protocol
+  REACT_APP_API_BASE_URL: ${API_BASE_URL}
+  REACT_APP_API_VERSION: "v1"
+
+  # REQ-1.1: Real-time Communications - WebSocket configuration for real-time updates
+  # Enables secure WebSocket connections with 30-second update intervals
+  REACT_APP_SOCKET_URL: ${SOCKET_URL}
+
+  # REQ-1.1: Maps Integration - Google Maps Platform integration settings
+  # Provides restricted Google Maps API key with domain limitations
+  REACT_APP_GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
+
+  # REQ-8.1: Security Requirements - Authentication and API security configuration
+  # Configures secure JWT token storage with XSS protection
+  REACT_APP_AUTH_TOKEN_KEY: "fleet_tracker_auth_token"
+
+  # REQ-1.2: Performance Requirements - Environment and performance configuration
+  # Controls environment-specific behavior and performance settings
+  REACT_APP_ENVIRONMENT: ${ENVIRONMENT}
+
+  # Additional Security Headers
+  # Enforces secure communication and content security policies
+  REACT_APP_ENABLE_CSP: "true"
+  REACT_APP_SECURE_COOKIES: "true"
+
+  # Performance Optimization
+  # Configures timeouts and retry mechanisms for optimal performance
+  REACT_APP_API_TIMEOUT: "30000"
+  REACT_APP_API_RETRY_ATTEMPTS: "3"
+
+  # Real-time Features
+  # Controls real-time tracking and synchronization settings
+  REACT_APP_LOCATION_UPDATE_INTERVAL: "30"
+  REACT_APP_SOCKET_RECONNECT_ATTEMPTS: "5"
+  REACT_APP_SOCKET_RECONNECT_DELAY: "3000"
+
+  # Monitoring and Analytics
+  # Enables performance monitoring and usage tracking
+  REACT_APP_ENABLE_ERROR_REPORTING: "true"
+  REACT_APP_ENABLE_PERFORMANCE_MONITORING: "true"
+  REACT_APP_ENABLE_ANALYTICS: "true"
+  REACT_APP_ANALYTICS_SAMPLE_RATE: "100"
+
+  # Feature Flags
+  # Toggles environment-specific features
+  REACT_APP_ENABLE_REAL_TIME_TRACKING: "true"
+  REACT_APP_ENABLE_OFFLINE_MODE: "true"
+  REACT_APP_ENABLE_ROUTE_OPTIMIZATION: "true"
+
+  # Cache Configuration
+  # Sets browser storage and caching parameters
+  REACT_APP_CACHE_DURATION: "3600"
+  REACT_APP_MAX_CACHE_SIZE: "50"
+
+  # Documentation URLs
+  # Provides links to API documentation and support resources
+  REACT_APP_API_DOCS_URL: "https://docs.fleettracker.com/api"
+  REACT_APP_SUPPORT_URL: "https://support.fleettracker.com"
