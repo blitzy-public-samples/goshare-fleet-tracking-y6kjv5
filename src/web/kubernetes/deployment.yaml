@@ -1,0 +1,235 @@
+# Kubernetes Deployment for Fleet Tracking System Web Dashboard
+# Version: v1
+# Dependencies: web-dashboard-config ConfigMap
+
+# HUMAN TASKS:
+# 1. Ensure container registry has been configured with proper authentication
+# 2. Verify SSL certificates are properly configured in the ingress controller
+# 3. Configure horizontal pod autoscaling metrics server
+# 4. Set up Prometheus monitoring endpoints
+# 5. Review and adjust resource limits based on actual usage patterns
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-dashboard
+  namespace: fleet-tracking
+  labels:
+    app: web-dashboard
+    component: frontend
+    part-of: fleet-tracking-system
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9113"
+    description: "React-based web dashboard for fleet tracking system"
+    kubernetes.io/change-cause: "Initial deployment of web dashboard"
+
+spec:
+  # REQ: High Availability - Ensures minimum 3 replicas for redundancy
+  replicas: 3
+  
+  # REQ: High Availability - Zero-downtime deployment strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  
+  # Pod selector configuration
+  selector:
+    matchLabels:
+      app: web-dashboard
+  
+  template:
+    metadata:
+      labels:
+        app: web-dashboard
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9113"
+    
+    spec:
+      # REQ: Security - Pod security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      containers:
+        - name: web-dashboard
+          image: fleet-tracking/web-dashboard:latest
+          imagePullPolicy: Always
+          
+          # REQ: Security - Container security context
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          
+          # REQ: Performance - Container resource limits and requests
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          
+          # Container ports
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: metrics
+              containerPort: 9113
+              protocol: TCP
+          
+          # REQ: High Availability - Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          
+          # Environment configuration from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: web-dashboard-config
+          
+          # Volume mounts for nginx configuration
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+              readOnly: true
+            - name: tmp-volume
+              mountPath: /tmp
+          
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+            items:
+              - key: nginx.conf
+                path: default.conf
+        - name: tmp-volume
+          emptyDir: {}
+      
+      # Node affinity for better pod distribution
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - web-dashboard
+                topologyKey: kubernetes.io/hostname
+      
+      # Tolerations for node issues
+      tolerations:
+        - key: "node.kubernetes.io/not-ready"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+        - key: "node.kubernetes.io/unreachable"
+          operator: "Exists"
+          effect: "NoExecute"
+          tolerationSeconds: 300
+
+---
+# REQ: Scalability - Horizontal Pod Autoscaling configuration
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web-dashboard-hpa
+  namespace: fleet-tracking
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web-dashboard
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 300
+
+---
+# REQ: Performance - Network Policy for web dashboard
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-dashboard-network-policy
+  namespace: fleet-tracking
+spec:
+  podSelector:
+    matchLabels:
+      app: web-dashboard
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: fleet-tracking
+        - podSelector:
+            matchLabels:
+              app: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 9113
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fleet-tracking
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
