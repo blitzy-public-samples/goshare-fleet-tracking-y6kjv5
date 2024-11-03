@@ -1,0 +1,52 @@
+// Human Tasks:
+// 1. Create and configure MAPS_API_KEY_DEV in your CI/CD environment or local development setup
+// 2. Ensure localhost development server is running on port 3000 for API and WebSocket connections
+// 3. Configure your development environment to handle debug symbols and crash reporting
+
+// Product Configuration
+// Requirement: Development Environment Configuration - Defines product name for debug builds
+PRODUCT_NAME = $(TARGET_NAME)_Debug
+CONFIGURATION = Debug
+
+// Build Settings
+// Requirement: Development Testing - Enable debugging capabilities and optimizations for development
+GCC_PREPROCESSOR_DEFINITIONS = DEBUG=1
+SWIFT_COMPILATION_MODE = singlefile
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+GCC_OPTIMIZATION_LEVEL = 0
+
+// Debug Information
+// Requirement: Development Testing - Configure debug information format and assertions
+ENABLE_TESTABILITY = YES
+ONLY_ACTIVE_ARCH = YES
+DEBUG_INFORMATION_FORMAT = dwarf
+ENABLE_NS_ASSERTIONS = YES
+
+// Metal API Configuration
+// Requirement: Development Testing - Enable debug information for Metal graphics API
+MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE
+MTL_FAST_MATH = NO
+
+// Build Process Configuration
+// Requirement: Development Testing - Configure build process for debugging
+VALIDATE_PRODUCT = NO
+COPY_PHASE_STRIP = NO
+ENABLE_BITCODE = NO
+
+// API Configuration
+// Requirement: Development Environment Configuration - Configure development endpoints
+API_BASE_URL = http://localhost:3000
+SOCKET_URL = ws://localhost:3000
+
+// Maps Configuration
+// Requirement: Development Environment Configuration - Configure maps API key for development
+MAPS_API_KEY = $(MAPS_API_KEY_DEV)
+
+// Logging and Debugging
+// Requirement: Security Development - Enable detailed logging for development
+ENABLE_LOGGING = YES
+LOG_LEVEL = debug
+
+// Crash Reporting
+// Requirement: Development Testing - Disable crash reporting for development builds
+ENABLE_CRASH_REPORTING = NO
