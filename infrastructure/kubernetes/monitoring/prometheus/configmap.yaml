@@ -1,0 +1,166 @@
+# Human Tasks:
+# 1. Verify network access from Prometheus to all monitored services
+# 2. Ensure service accounts have necessary permissions for metrics scraping
+# 3. Configure alertmanager endpoints if alert notifications are required
+# 4. Review and adjust scraping intervals based on system load
+# 5. Validate alert thresholds match your environment's capacity
+
+# Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+# Implements Prometheus monitoring configuration as specified in the infrastructure stack
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: server
+data:
+  prometheus.yml: |
+    # Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+    # Global configuration for scraping intervals and evaluation
+    global:
+      scrape_interval: 30s
+      evaluation_interval: 30s
+
+    # Requirement: Performance Requirements (1.2 Scope/Performance Requirements)
+    # Scraping configurations for various system components to monitor 99.9% uptime
+    scrape_configs:
+      # Kubernetes node metrics collection
+      - job_name: 'kubernetes-nodes'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - action: labelmap
+            regex: __meta_kubernetes_node_label_(.+)
+
+      # Kubernetes pod metrics collection
+      - job_name: 'kubernetes-pods'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+      # Kubernetes service metrics collection
+      - job_name: 'kubernetes-services'
+        kubernetes_sd_configs:
+          - role: service
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+
+      # API monitoring configuration
+      - job_name: 'api-monitoring'
+        metrics_path: '/metrics'
+        scrape_interval: 15s
+        static_configs:
+          - targets: ['api-gateway:8080']
+
+    # Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+    # Alert rules for system metrics with defined warning and critical thresholds
+    rule_files:
+      - /etc/prometheus/rules/*.yml
+
+    # Alert rules configuration
+    alerting_rules:
+      # CPU Usage Alerts
+      - name: cpu_usage_alert
+        rules:
+          - alert: HighCPUUsage
+            expr: container_cpu_usage_seconds_total > 0.7
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: "Container CPU usage above 70% threshold"
+          - alert: CriticalCPUUsage
+            expr: container_cpu_usage_seconds_total > 0.9
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              description: "Container CPU usage above 90% threshold"
+
+      # Memory Usage Alerts
+      - name: memory_usage_alert
+        rules:
+          - alert: HighMemoryUsage
+            expr: container_memory_usage_bytes / container_memory_limit_bytes > 0.75
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: "Container memory usage above 75% threshold"
+          - alert: CriticalMemoryUsage
+            expr: container_memory_usage_bytes / container_memory_limit_bytes > 0.95
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              description: "Container memory usage above 95% threshold"
+
+      # API Response Time Alerts
+      - name: api_response_alert
+        rules:
+          - alert: SlowAPIResponse
+            expr: http_request_duration_seconds > 0.5
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: "API response time above 500ms threshold"
+          - alert: CriticalAPIResponse
+            expr: http_request_duration_seconds > 2
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              description: "API response time above 2s threshold"
+
+      # Database Connections Alerts
+      - name: database_connections_alert
+        rules:
+          - alert: HighDBConnections
+            expr: pg_stat_activity_count / pg_settings_max_connections > 0.8
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: "Database connections above 80% threshold"
+          - alert: CriticalDBConnections
+            expr: pg_stat_activity_count / pg_settings_max_connections > 0.95
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              description: "Database connections above 95% threshold"
+
+      # Disk Usage Alerts
+      - name: disk_usage_alert
+        rules:
+          - alert: HighDiskUsage
+            expr: disk_used_percent > 75
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              description: "Disk usage above 75% threshold"
+          - alert: CriticalDiskUsage
+            expr: disk_used_percent > 90
+            for: 5m
+            labels:
+              severity: critical
+            annotations:
+              description: "Disk usage above 90% threshold"
