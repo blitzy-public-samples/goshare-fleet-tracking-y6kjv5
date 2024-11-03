@@ -1,0 +1,224 @@
+# Human Tasks:
+# 1. Verify DNS records are properly configured for the domain names in the Certificate resource
+# 2. Ensure AWS IAM permissions are set up for DNS01 challenge if using Route53
+# 3. Monitor certificate renewal status and expiration
+# 4. Configure alerts for certificate-related events
+# 5. Test certificate renewal process before production deployment
+
+---
+# Requirement: SSL/TLS Security (8.2 Data Security/8.2.1 Encryption Standards)
+# Namespace for cert-manager deployment
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+    kubernetes.io/cluster-service: "true"
+
+---
+# Requirement: High Availability (4.5 Scalability Architecture)
+# Cert-manager deployment with high availability configuration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cert-manager
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+spec:
+  replicas: 3  # High availability with multiple replicas
+  selector:
+    matchLabels:
+      app: cert-manager
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: cert-manager
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9402"
+    spec:
+      serviceAccountName: monitoring-service-account # Using imported service account
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: cert-manager
+          image: quay.io/jetstack/cert-manager-controller:v1.11.0 # Version from dependencies
+          imagePullPolicy: IfNotPresent
+          args:
+            - --v=2
+            - --cluster-resource-namespace=$(POD_NAMESPACE)
+            - --leader-election-namespace=kube-system
+            - --acme-http01-solver-image=quay.io/jetstack/cert-manager-acmesolver:v1.11.0
+          ports:
+            - containerPort: 9402
+              protocol: TCP
+              name: metrics
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 6080
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 6080
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+
+---
+# Requirement: Security Compliance (8.3.3 Security Compliance Controls)
+# ClusterIssuer for Let's Encrypt production certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx  # Using imported nginx ingress class
+        selector: {}
+
+---
+# Requirement: SSL/TLS Security (8.2 Data Security/8.2.1 Encryption Standards)
+# Certificate resource for fleet tracking domains
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: fleet-tracking-tls
+  namespace: fleet-tracking
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+spec:
+  secretName: fleet-tracking-tls-secret
+  duration: 2160h  # 90 days
+  renewBefore: 360h  # 15 days
+  subject:
+    organizations:
+      - Fleet Tracking System
+  privateKey:
+    algorithm: RSA
+    encoding: PKCS1
+    size: 2048
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - api.fleettracking.com
+    - "*.fleettracking.com"
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+---
+# Requirement: High Availability (4.5 Scalability Architecture)
+# Service for cert-manager metrics
+apiVersion: v1
+kind: Service
+metadata:
+  name: cert-manager-metrics
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9402"
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9402
+      targetPort: metrics
+      protocol: TCP
+  selector:
+    app: cert-manager
+
+---
+# Requirement: Security Compliance (8.3.3 Security Compliance Controls)
+# ConfigMap for cert-manager configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cert-manager-config
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+data:
+  acme-http01-solver-resource-limits: |
+    requests:
+      cpu: 100m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  acme-http01-solver-image: quay.io/jetstack/cert-manager-acmesolver:v1.11.0
+  feature-gates: ExperimentalCertificateSigningRequestControllers=true
+  max-concurrent-challenges: "60"
+  prometheus-metrics-enabled: "true"
+  dns01-recursive-nameservers: "8.8.8.8:53,1.1.1.1:53"
+  dns01-recursive-nameservers-only: "true"
+
+---
+# Requirement: Security Compliance (8.3.3 Security Compliance Controls)
+# PodDisruptionBudget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cert-manager-pdb
+  namespace: cert-manager
+  labels:
+    app: cert-manager
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/part-of: fleet-tracking
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cert-manager
