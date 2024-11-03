@@ -1,0 +1,155 @@
+// Human Tasks:
+// 1. Create a keystore file for release signing and update signingConfigs.release with correct values
+// 2. Update google-services.json with actual Firebase project credentials
+// 3. Configure ProGuard rules in proguard-rules.pro for production release
+// 4. Set up environment-specific configuration in debug/release buildTypes
+
+// Apply required plugins
+apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'  // Firebase configuration
+apply plugin: 'kotlin-android'  // Kotlin support
+apply plugin: 'kotlin-kapt'     // Kotlin annotation processing
+
+android {
+    namespace 'com.fleettracker'
+    compileSdkVersion 33
+    buildToolsVersion "33.0.0"
+
+    defaultConfig {
+        applicationId "com.fleettracker"
+        minSdkVersion 24
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+        
+        // Enable multidex for large app support
+        multiDexEnabled true
+        
+        // Enable Room schema export
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments += [
+                    "room.schemaLocation": "$projectDir/schemas",
+                    "room.incremental": "true",
+                    "room.expandProjection": "true"
+                ]
+            }
+        }
+    }
+
+    // Signing configurations for app distribution
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            // TODO: Configure release signing
+            storeFile file('release.keystore')
+            storePassword System.getenv('KEYSTORE_PASSWORD')
+            keyAlias System.getenv('KEY_ALIAS')
+            keyPassword System.getenv('KEY_PASSWORD')
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            
+            // Enable R8 optimization
+            shrinkResources true
+            
+            // Configure release-specific variables
+            buildConfigField "String", "API_BASE_URL", "\"https://api.fleettracker.com/\""
+        }
+    }
+
+    // Enable data binding
+    buildFeatures {
+        viewBinding true
+    }
+
+    // Configure product flavors if needed
+    flavorDimensions "environment"
+    productFlavors {
+        development {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+        }
+        production {
+            dimension "environment"
+        }
+    }
+
+    // Configure packaging options
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/LICENSE.txt'
+        exclude 'META-INF/license.txt'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/NOTICE.txt'
+        exclude 'META-INF/notice.txt'
+        exclude 'META-INF/ASL2.0'
+    }
+
+    // Configure compile options
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    // React Native core - version 0.71.8
+    implementation 'com.facebook.react:react-native:0.71.8'
+    
+    // Google Maps and Location Services - version 21.0.1
+    implementation 'com.google.android.gms:play-services-maps:21.0.1'
+    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    
+    // Firebase dependencies - version 23.2.0 for messaging, 21.0.0 for core
+    implementation 'com.google.firebase:firebase-messaging:23.2.0'
+    implementation 'com.google.firebase:firebase-core:21.0.0'
+    
+    // Room database for offline storage - version 2.5.0
+    implementation 'androidx.room:room-runtime:2.5.0'
+    kapt 'androidx.room:room-compiler:2.5.0'
+    
+    // AndroidX dependencies
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.core:core-ktx:1.10.1'
+    
+    // Background job scheduling
+    implementation 'androidx.work:work-runtime-ktx:2.8.1'
+    
+    // Network and API communication
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.10.0'
+    
+    // Image loading and caching
+    implementation 'com.github.bumptech.glide:glide:4.15.1'
+    
+    // Testing dependencies
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+// Apply Google Services plugin after dependencies
+apply plugin: 'com.google.gms.google-services'
