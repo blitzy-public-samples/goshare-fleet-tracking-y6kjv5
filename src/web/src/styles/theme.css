@@ -1,0 +1,148 @@
+/* HUMAN TASKS:
+1. Ensure the Roboto font is properly included in the project (via Google Fonts or self-hosted)
+2. Verify Material-UI version 4.12.0 compatibility with the theme variables
+3. Test cross-browser compatibility, especially for CSS custom properties in older browsers
+4. Validate color contrast ratios meet WCAG accessibility guidelines
+*/
+
+/* @material-ui/core version: ^4.12.0 */
+
+/* Requirement: Web Dashboard UI Framework
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Material-UI theme integration with CSS custom properties
+ */
+:root {
+  /* Color Palette
+   * Primary and secondary colors aligned with Material-UI theme system
+   */
+  --primary-main: #1976d2;
+  --primary-light: #42a5f5;
+  --primary-dark: #1565c0;
+  --secondary-main: #dc004e;
+  --secondary-light: #ff4081;
+  --secondary-dark: #9a0036;
+  --success-main: #4caf50;
+  --error-main: #f44336;
+  --warning-main: #ff9800;
+  --info-main: #2196f3;
+  --background-default: #f5f5f5;
+  --background-paper: #ffffff;
+  --text-primary: rgba(0, 0, 0, 0.87);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-disabled: rgba(0, 0, 0, 0.38);
+  --border-color: rgba(0, 0, 0, 0.12);
+
+  /* Typography System
+   * Font families and sizes following Material Design specifications
+   */
+  --font-family-base: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  --font-size-base: 16px;
+  --font-size-h1: 2.5rem;
+  --font-size-h2: 2rem;
+  --font-size-h3: 1.75rem;
+  --font-size-h4: 1.5rem;
+  --font-size-h5: 1.25rem;
+  --font-size-h6: 1rem;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+  --line-height-base: 1.5;
+  --line-height-heading: 1.2;
+
+  /* Spacing System
+   * Consistent spacing units for margins, padding, and layout
+   */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  --container-padding: 24px;
+  --sidebar-width: 240px;
+  --header-height: 64px;
+
+  /* Elevation System
+   * Shadow definitions for depth and layering
+   */
+  --elevation-1: 0 2px 4px rgba(0,0,0,0.1);
+  --elevation-2: 0 4px 8px rgba(0,0,0,0.1);
+  --elevation-3: 0 8px 16px rgba(0,0,0,0.1);
+  --elevation-4: 0 12px 24px rgba(0,0,0,0.1);
+
+  /* Animation System
+   * Consistent transition timing for interactions
+   */
+  --transition-duration: 0.3s;
+  --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-index System
+   * Standardized z-index values for layering
+   */
+  --z-index-header: 1100;
+  --z-index-sidebar: 1000;
+  --z-index-modal: 1300;
+  --z-index-tooltip: 1400;
+  --z-index-snackbar: 1500;
+}
+
+/* Requirement: Responsive Design
+ * Location: 4.2.1 Frontend Components/Web Dashboard
+ * Implementation: Responsive breakpoints and adjustments
+ */
+@media (max-width: 600px) {
+  :root {
+    --container-padding: 16px;
+    --font-size-base: 14px;
+    --spacing-lg: 20px;
+    --spacing-xl: 28px;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 960px) {
+  :root {
+    --container-padding: 20px;
+    --font-size-base: 15px;
+  }
+}
+
+/* Requirement: Cross-Platform Compatibility
+ * Location: 1.2 Scope/Performance Requirements
+ * Implementation: CSS custom properties with fallbacks for older browsers
+ */
+@supports not (--css: variables) {
+  body {
+    /* Fallback values for browsers that don't support CSS custom properties */
+    font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: #f5f5f5;
+    color: rgba(0, 0, 0, 0.87);
+  }
+}
+
+/* Ensure proper inheritance of text colors */
+body {
+  color: var(--text-primary);
+  background-color: var(--background-default);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base heading styles */
+h1, h2, h3, h4, h5, h6 {
+  line-height: var(--line-height-heading);
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+h1 { font-size: var(--font-size-h1); }
+h2 { font-size: var(--font-size-h2); }
+h3 { font-size: var(--font-size-h3); }
+h4 { font-size: var(--font-size-h4); }
+h5 { font-size: var(--font-size-h5); }
+h6 { font-size: var(--font-size-h6); }
