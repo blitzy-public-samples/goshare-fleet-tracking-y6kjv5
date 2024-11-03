@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="22E261" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <!-- Human Tasks:
+    1. Import this model into Xcode's Core Data model editor
+    2. Enable Core Data model versioning for future schema updates
+    3. Configure automatic lightweight migration in CoreDataManager
+    4. Set up appropriate indexes in Xcode's model editor
+    5. Configure entity inheritance and validation rules if needed -->
+    
+    <!-- Requirement: Offline data handling capabilities for mobile applications with local persistence -->
+    <entity name="DeliveryEntity" representedClassName="DeliveryEntity" syncable="YES">
+        <attribute name="actualDeliveryDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="address" optional="NO" attributeType="String"/>
+        <attribute name="customerId" optional="NO" attributeType="String"/>
+        <attribute name="estimatedDuration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="isOffline" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isSynced" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lastModified" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="latitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="proofImage" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="proofSignature" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="routeId" optional="NO" attributeType="String"/>
+        <attribute name="scheduledDate" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" optional="NO" attributeType="String"/>
+        <relationship name="route" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="RouteEntity" inverseName="deliveries" inverseEntity="RouteEntity"/>
+        <fetchIndex name="id_index">
+            <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="sync_index">
+            <fetchIndexElement property="isSynced" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    
+    <!-- Requirement: Real-time data synchronization between mobile and backend with sync status tracking -->
+    <entity name="RouteEntity" representedClassName="RouteEntity" syncable="YES">
+        <attribute name="driverId" optional="NO" attributeType="String"/>
+        <attribute name="endDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="isActive" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isSynced" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lastModified" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="startDate" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" optional="NO" attributeType="String"/>
+        <attribute name="vehicleId" optional="NO" attributeType="String"/>
+        <relationship name="deliveries" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="DeliveryEntity" inverseName="route" inverseEntity="DeliveryEntity"/>
+        <relationship name="vehicle" optional="NO" maxCount="1" deletionRule="Nullify" destinationEntity="VehicleEntity" inverseName="routes" inverseEntity="VehicleEntity"/>
+        <fetchIndex name="id_index">
+            <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="active_index">
+            <fetchIndexElement property="isActive" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    
+    <!-- Requirement: Real-time data synchronization with location tracking -->
+    <entity name="VehicleEntity" representedClassName="VehicleEntity" syncable="YES">
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="isSynced" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="lastLatitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="lastLocationUpdate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastLongitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="lastModified" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="registrationNumber" optional="NO" attributeType="String"/>
+        <attribute name="status" optional="NO" attributeType="String"/>
+        <attribute name="type" optional="NO" attributeType="String"/>
+        <relationship name="routes" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RouteEntity" inverseName="vehicle" inverseEntity="RouteEntity"/>
+        <fetchIndex name="id_index">
+            <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="registration_index">
+            <fetchIndexElement property="registrationNumber" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+            <uniquenessConstraint>
+                <constraint value="registrationNumber"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    
+    <!-- Requirement: Real-time location tracking with sync status -->
+    <entity name="LocationEntity" representedClassName="LocationEntity" syncable="YES">
+        <attribute name="heading" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="NO" attributeType="String"/>
+        <attribute name="isSynced" optional="NO" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="latitude" optional="NO" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" optional="NO" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="speed" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="timestamp" optional="NO" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="vehicleId" optional="NO" attributeType="String"/>
+        <fetchIndex name="vehicle_time_index">
+            <fetchIndexElement property="vehicleId" type="Binary" order="ascending"/>
+            <fetchIndexElement property="timestamp" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="sync_index">
+            <fetchIndexElement property="isSynced" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="id"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    
+    <!-- Predefined fetch requests for common queries -->
+    <fetchRequest name="FetchUnsyncedDeliveries" entity="DeliveryEntity" predicateString="isSynced == NO">
+        <fetchedPropertyDescription name="lastModified">
+            <sortDescriptor key="lastModified" ascending="YES"/>
+        </fetchedPropertyDescription>
+    </fetchRequest>
+    
+    <fetchRequest name="FetchActiveRoutes" entity="RouteEntity" predicateString="isActive == YES">
+        <fetchedPropertyDescription name="startDate">
+            <sortDescriptor key="startDate" ascending="YES"/>
+        </fetchedPropertyDescription>
+    </fetchRequest>
+    
+    <fetchRequest name="FetchVehicleLocations" entity="LocationEntity" predicateString="isSynced == NO">
+        <fetchedPropertyDescription name="timestamp">
+            <sortDescriptor key="timestamp" ascending="YES"/>
+        </fetchedPropertyDescription>
+    </fetchRequest>
+    
+    <!-- Model configuration -->
+    <configuration name="Default">
+        <memberEntity name="DeliveryEntity"/>
+        <memberEntity name="RouteEntity"/>
+        <memberEntity name="VehicleEntity"/>
+        <memberEntity name="LocationEntity"/>
+    </configuration>
+    
+    <elements>
+        <element name="DeliveryEntity" positionX="-63" positionY="-18" width="128" height="284"/>
+        <element name="RouteEntity" positionX="-54" positionY="-9" width="128" height="194"/>
+        <element name="VehicleEntity" positionX="-36" positionY="9" width="128" height="179"/>
+        <element name="LocationEntity" positionX="-18" positionY="27" width="128" height="149"/>
+    </elements>
+</model>
