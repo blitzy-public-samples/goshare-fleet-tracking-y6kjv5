@@ -1,0 +1,69 @@
+# Human Tasks:
+# 1. Review and adjust environment-specific values before deployment
+# 2. Set up monitoring alerts for critical configuration thresholds
+# 3. Configure backup retention policies for databases
+# 4. Set up SSL certificates for secure communications
+# 5. Configure network security groups and firewall rules
+
+# Requirement: Core Backend Services Configuration - Configuration for Node.js and Python microservices
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: default
+  labels:
+    app: fleet-tracker
+    component: backend
+data:
+  # Core Application Settings
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  API_VERSION: "v1"
+
+  # Requirement: Data Layer Configuration - PostgreSQL Configuration with High Availability
+  POSTGRES_HOST: "postgres-primary"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "fleet_tracker"
+  POSTGRES_MAX_POOL: "20"
+  POSTGRES_IDLE_TIMEOUT: "30000"
+  POSTGRES_CONN_TIMEOUT: "2000"
+  POSTGRES_MAX_USES: "7500"
+  POSTGRES_STATEMENT_TIMEOUT: "10000"
+  POSTGRES_QUERY_TIMEOUT: "10000"
+  POSTGRES_KEEPALIVE: "true"
+  POSTGRES_KEEPALIVE_INITIAL_DELAY: "10000"
+
+  # Requirement: Scalable Architecture - MongoDB Configuration with Replica Set
+  MONGODB_URI: "mongodb://mongodb-primary:27017,mongodb-secondary:27017/fleet_tracker"
+  MONGODB_DB: "fleet_tracker"
+  MONGODB_POOL_SIZE: "100"
+  MONGODB_MIN_POOL_SIZE: "10"
+  MONGODB_MAX_IDLE_TIME: "30000"
+  MONGODB_SERVER_SELECTION_TIMEOUT: "5000"
+  MONGODB_HEARTBEAT_FREQUENCY: "10000"
+
+  # Requirement: System Performance - Redis Cache Configuration
+  REDIS_HOST: "redis-master"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_KEY_PREFIX: "fleet:"
+  REDIS_MAX_RETRIES: "3"
+  REDIS_CONNECT_TIMEOUT: "10000"
+
+  # Requirement: Real-time Communications - Socket.io Configuration
+  SOCKET_PING_TIMEOUT: "30000"
+  SOCKET_PING_INTERVAL: "25000"
+  SOCKET_UPGRADE_TIMEOUT: "10000"
+  SOCKET_MAX_BUFFER: "1000000"
+  SOCKET_TRANSPORTS: "websocket,polling"
+
+  # Security and CORS Settings
+  CORS_ORIGIN: "*"
+  CORS_METHODS: "GET,POST,PUT,DELETE,OPTIONS"
+  JWT_EXPIRY: "24h"
+
+  # Requirement: Real-time Data Processing - Location and Cache Settings
+  LOCATION_UPDATE_INTERVAL: "30"
+  LOCATION_CACHE_TTL: "60"
+  ROUTE_CACHE_TTL: "3600"
+  SESSION_CACHE_TTL: "86400"
