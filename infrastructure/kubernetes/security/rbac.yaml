@@ -1,0 +1,190 @@
+# Human Tasks:
+# 1. Ensure all referenced service accounts exist before applying RBAC rules
+# 2. Verify namespace existence and permissions
+# 3. Monitor role bindings through audit logs
+# 4. Regularly review and audit RBAC permissions
+# 5. Implement automated compliance checks for RBAC configurations
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role for location service with restricted permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: location-service-role
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: location-service
+    security-tier: restricted
+spec:
+  # Requirement: Security Controls (4.6 Security Architecture/Security Services)
+  # Implements least privilege access for location service
+  rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role binding for location service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: location-service-binding
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: location-service
+spec:
+  # Requirement: Security Controls (4.6 Security Architecture/Security Services)
+  # Binds location service account to restricted role
+  subjects:
+  - kind: ServiceAccount
+    name: location-service-account
+    namespace: fleet-tracking
+  roleRef:
+    kind: Role
+    name: location-service-role
+    apiGroup: rbac.authorization.k8s.io
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role for fleet management service
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: fleet-service-role
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: fleet-service
+    security-tier: restricted
+spec:
+  # Requirement: Security Controls (4.6 Security Architecture/Security Services)
+  # Implements least privilege access for fleet service
+  rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role binding for fleet service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fleet-service-binding
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: fleet-service
+spec:
+  subjects:
+  - kind: ServiceAccount
+    name: fleet-service-account
+    namespace: fleet-tracking
+  roleRef:
+    kind: Role
+    name: fleet-service-role
+    apiGroup: rbac.authorization.k8s.io
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role for analytics service
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: analytics-service-role
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: analytics-service
+    security-tier: restricted
+spec:
+  # Requirement: Compliance Requirements (8.3.3 Security Compliance Controls)
+  # Implements SOC 2 compliant access controls
+  rules:
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Role binding for analytics service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: analytics-service-binding
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: analytics-service
+spec:
+  subjects:
+  - kind: ServiceAccount
+    name: analytics-service-account
+    namespace: fleet-tracking
+  roleRef:
+    kind: Role
+    name: analytics-service-role
+    apiGroup: rbac.authorization.k8s.io
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Cluster role for monitoring service with elevated permissions
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: monitoring-cluster-role
+  labels:
+    app: fleet-tracking
+    component: monitoring
+    security-tier: privileged
+spec:
+  # Requirement: Security Controls (4.6 Security Architecture/Security Services)
+  # Implements necessary permissions for monitoring components
+  rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes", "services", "endpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+  - apiGroups: ["extensions", "networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["get", "list", "watch"]
+
+---
+# Requirement: Authentication and Authorization (8.1.2 Authorization Model)
+# Cluster role binding for monitoring service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: monitoring-cluster-binding
+  labels:
+    app: fleet-tracking
+    component: monitoring
+spec:
+  # Requirement: Compliance Requirements (8.3.3 Security Compliance Controls)
+  # Implements ISO 27001 compliant access controls
+  subjects:
+  - kind: ServiceAccount
+    name: monitoring-service-account
+    namespace: monitoring
+  roleRef:
+    kind: ClusterRole
+    name: monitoring-cluster-role
+    apiGroup: rbac.authorization.k8s.io
