@@ -1,0 +1,141 @@
+# Human Tasks:
+# 1. Set up environment-specific .env files with secure credentials
+# 2. Configure SSL certificates for secure communication
+# 3. Set up monitoring agents for container health checks
+# 4. Configure backup schedules for persistent volumes
+# 5. Review and adjust resource limits based on environment
+
+version: '3.8'
+
+# Requirement: Core Backend Services (1.1) - Network isolation for backend services
+networks:
+  backend_network:
+    driver: bridge
+    name: fleet_backend_network
+
+# Requirement: Data Layer Configuration (4.1) - Persistent storage configuration
+volumes:
+  postgres_data:
+    driver: local
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+services:
+  # Requirement: Core Backend Services (1.1) - Node.js microservices
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"  # REST API
+      - "3001:3001"  # WebSocket
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - WEBSOCKET_PORT=3001
+      - POSTGRES_HOST=postgres
+      - MONGODB_HOST=mongodb
+      - REDIS_HOST=redis
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+    depends_on:
+      - postgres
+      - mongodb
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend_network
+
+  # Requirement: Core Backend Services (1.1) - Python analytics service
+  analytics:
+    build:
+      context: .
+      dockerfile: Dockerfile.analytics
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGODB_HOST=mongodb
+      - REDIS_HOST=redis
+    volumes:
+      - ./services/analytics:/app/analytics
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
+    networks:
+      - backend_network
+
+  # Requirement: Data Layer Configuration (4.1) - PostgreSQL configuration
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=fleet_user
+      - POSTGRES_PASSWORD=fleet_password
+      - POSTGRES_DB=fleet_db
+      # Requirement: Performance Requirements (1.2) - Database optimization
+      - max_connections=1000
+      - shared_buffers=256MB
+      - work_mem=16MB
+      - maintenance_work_mem=256MB
+      - effective_cache_size=1GB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fleet_user -d fleet_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend_network
+
+  # Requirement: Data Layer Configuration (4.1) - MongoDB configuration
+  mongodb:
+    image: mongo:6.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=fleet_user
+      - MONGO_INITDB_ROOT_PASSWORD=fleet_password
+      - MONGO_INITDB_DATABASE=fleet_db
+    volumes:
+      - mongodb_data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "'db.adminCommand(\"ping\")'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend_network
+
+  # Requirement: Data Layer Configuration (4.1) - Redis configuration
+  redis:
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    # Requirement: Scalability Architecture (4.5) - Redis optimization
+    command: [
+      "redis-server",
+      "--appendonly", "yes",
+      "--maxmemory", "1gb",
+      "--maxmemory-policy", "allkeys-lru"
+    ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend_network
