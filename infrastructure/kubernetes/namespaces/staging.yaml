@@ -1,0 +1,170 @@
+# Human Tasks:
+# 1. Ensure cluster has the required admission controllers enabled: PodSecurityPolicy, LimitRanger, ResourceQuota
+# 2. Verify that the service mesh (e.g., Istio) is installed in the cluster
+# 3. Configure external monitoring tools (Prometheus/Grafana) to scrape metrics from this namespace
+# 4. Set up backup retention policies in your backup solution to match the 30d retention annotation
+# 5. Ensure SOC2 compliance requirements are met for this environment
+
+# Kubernetes v1.24+ namespace configuration for staging environment
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+  labels:
+    name: staging
+    environment: staging
+    app: fleet-tracking-system
+    monitoring: enabled
+    logging: enabled
+  annotations:
+    environment.fleettracker.io/type: staging
+    environment.fleettracker.io/description: Pre-production testing environment
+    security.fleettracker.io/compliance: soc2
+    backup.fleettracker.io/retention: 30d
+    monitoring.fleettracker.io/prometheus: enabled
+spec:
+  finalizers:
+    - kubernetes
+
+---
+# Resource Quota configuration for staging environment
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: staging-quota
+  namespace: staging
+spec:
+  hard:
+    # Compute resource limits
+    requests.cpu: "32"
+    limits.cpu: "32"
+    requests.memory: "64Gi"
+    limits.memory: "64Gi"
+    
+    # Storage limits
+    requests.storage: "500Gi"
+    
+    # Object count limits
+    pods: "100"
+    services: "50"
+    secrets: "100"
+    configmaps: "50"
+    persistentvolumeclaims: "50"
+
+---
+# Network Policy for staging environment security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: staging-network-policy
+  namespace: staging
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow same namespace communication
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: staging
+    # Allow monitoring tools access
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+    # Allow ingress controller access
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app: ingress-nginx
+    # Allow Prometheus access
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: prometheus
+    # Allow Grafana access
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: grafana
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Allow metrics-server access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: metrics-server
+    # Allow AWS services access
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow external API access
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    # Allow monitoring endpoints access
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+
+---
+# LimitRange to set default resource constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: staging-limits
+  namespace: staging
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "256Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"
+
+---
+# Pod Security Policy binding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: staging-psp-binding
+  namespace: staging
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: restricted-psp-role
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: staging
