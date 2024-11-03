@@ -1,0 +1,30 @@
+# Human Tasks:
+# 1. Replace [domain] in Sitemap URL with actual production domain
+# 2. Verify all sensitive routes are included in Disallow directives
+# 3. Confirm public routes in Allow directives match application routing
+
+# Fleet Tracking System Crawler Access Control
+# Implementation of Security Architecture requirement 4.6
+# Controls crawler access to protect sensitive application routes
+
+User-agent: *
+
+# Block access to sensitive areas (Web Dashboard Security requirement 4.2.1)
+Disallow: /api/
+Disallow: /dashboard/
+Disallow: /fleet/
+Disallow: /routes/
+Disallow: /analytics/
+Disallow: /settings/
+Disallow: /auth/
+
+# Allow access to public content
+Allow: /
+Allow: /tracking/
+Allow: /about/
+Allow: /contact/
+Allow: /privacy/
+Allow: /terms/
+
+# XML Sitemap location
+Sitemap: https://[domain]/sitemap.xml
