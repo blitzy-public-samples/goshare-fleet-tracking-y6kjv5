@@ -1,0 +1,43 @@
+{
+  // Prettier configuration for React web dashboard
+  // Version: prettier@2.8.8
+  
+  // Human Tasks:
+  // 1. Ensure all developers have Prettier installed in their IDE/editor
+  // 2. Configure editor to format on save using this config
+  // 3. Add prettier scripts to package.json for CLI usage
+  // 4. Setup pre-commit hooks to run prettier
+
+  // Line length configuration
+  "printWidth": 100,
+
+  // Indentation configuration
+  "tabWidth": 2,
+  "useTabs": false,
+
+  // Code style configuration
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "jsxBracketSameLine": false,
+  "arrowParens": "avoid",
+
+  // Text wrapping
+  "proseWrap": "preserve",
+
+  // HTML whitespace handling
+  "htmlWhitespaceSensitivity": "css",
+
+  // Line endings
+  "endOfLine": "lf",
+
+  // Language specific formatting
+  "embeddedLanguageFormatting": "auto",
+
+  // JSX quotes configuration
+  "jsxSingleQuote": false,
+
+  // Object property quotes
+  "quoteProps": "as-needed"
+}
