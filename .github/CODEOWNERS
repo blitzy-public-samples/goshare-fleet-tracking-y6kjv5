@@ -1,0 +1,57 @@
+# Human Tasks:
+# 1. Verify that all team groups (@org/backend-team, @org/frontend-team, etc.) exist in your GitHub organization
+# 2. Ensure all team members are assigned to their respective groups in GitHub
+# 3. Configure branch protection rules in GitHub repository settings to enforce code review requirements
+# 4. Set up automated notifications for code review assignments
+
+# Global owners - Platform administrators will be requested for review on all changes
+# Requirement: Development Process Controls - Enforces code review requirements
+* @org/platform-admins
+
+# Backend service ownership
+# Requirement: Security Architecture - SOC 2 and ISO 27001 compliance for backend services
+/src/backend/ @org/backend-team @org/tech-leads
+
+# Web dashboard ownership
+# Requirement: Development Process Controls - Frontend code review coverage
+/src/web/ @org/frontend-team @org/tech-leads
+
+# Mobile app ownership - Android
+# Requirement: Development Process Controls - Mobile app code review coverage
+/src/android/ @org/mobile-team @org/tech-leads
+
+# Mobile app ownership - iOS
+# Requirement: Development Process Controls - Mobile app code review coverage
+/src/ios/ @org/mobile-team @org/tech-leads
+
+# Infrastructure code ownership
+# Requirement: Security Architecture - Infrastructure security compliance
+/infrastructure/ @org/devops-team @org/tech-leads
+
+# Terraform file ownership
+# Requirement: Security Architecture - Infrastructure as Code security review
+*.tf @org/devops-team
+
+# Kubernetes and infrastructure YAML ownership
+# Requirement: Security Architecture - Container orchestration security review
+*.yaml @org/devops-team
+
+# Encryption utility ownership
+# Requirement: Security Architecture - Cryptography implementation review
+/src/backend/src/common/utils/encryption.ts @org/security-team @org/tech-leads
+
+# Security-related configuration ownership
+# Requirement: Security Architecture - Security configuration review
+*/security/* @org/security-team
+
+# Test file ownership - TypeScript
+# Requirement: Development Process Controls - Test coverage review
+*.test.ts @org/qa-team @org/tech-leads
+
+# React component test file ownership
+# Requirement: Development Process Controls - Frontend test coverage review
+*.test.tsx @org/qa-team @org/tech-leads
+
+# Python test file ownership
+# Requirement: Development Process Controls - Python test coverage review
+*.test.py @org/qa-team @org/tech-leads
