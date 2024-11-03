@@ -1,0 +1,65 @@
+/* HUMAN TASKS:
+1. Verify all strings with localization team for accuracy and cultural appropriateness
+2. Test right-to-left language support (Arabic, Hebrew)
+3. Validate string length constraints for UI elements
+4. Set up continuous localization workflow with translation service
+5. Test accessibility features with VoiceOver enabled
+*/
+
+// MARK: - Authentication Strings
+// Requirement: Mobile Applications - iOS driver applications with localized interface
+"login.title" = "Login";
+"login.email.placeholder" = "Enter your email";
+"login.password.placeholder" = "Enter your password";
+"login.button.title" = "Sign In";
+"login.error.invalid_credentials" = "Invalid email or password";
+"login.error.network" = "Network connection error";
+"login.error.generic" = "An error occurred. Please try again";
+"login.error.validation" = "Please enter valid credentials";
+"login.error.oauth" = "OAuth authentication failed";
+"login.success" = "Authentication successful";
+
+// MARK: - Delivery Status Strings
+// Requirement: Digital proof of delivery interface localization
+"delivery.status.pending" = "Pending";
+"delivery.status.in_progress" = "In Progress";
+"delivery.status.completed" = "Completed";
+"delivery.status.failed" = "Failed";
+"delivery.proof.title" = "Proof of Delivery";
+"delivery.proof.signature" = "Capture Signature";
+"delivery.proof.photo" = "Take Photo";
+"delivery.proof.notes" = "Add Notes";
+"delivery.proof.submit" = "Submit Proof of Delivery";
+"delivery.offline.queued" = "Queued for sync";
+"delivery.offline.syncing" = "Syncing...";
+"delivery.offline.synced" = "Synced successfully";
+"delivery.offline.sync_failed" = "Sync failed, will retry later";
+"delivery.validation.required" = "Required fields missing";
+"delivery.validation.signature" = "Signature required";
+"delivery.validation.photo" = "At least one photo required";
+
+// MARK: - Location Service Strings
+// Requirement: Offline operation support - Location tracking status
+"location.permission.title" = "Location Access Required";
+"location.permission.message" = "Please enable location services to track deliveries";
+"location.error.disabled" = "Location services are disabled";
+"location.error.restricted" = "Location access is restricted";
+"location.error.denied" = "Location access was denied";
+"location.error.accuracy" = "Insufficient location accuracy";
+"location.status.tracking" = "Tracking location";
+"location.status.paused" = "Location tracking paused";
+
+// MARK: - Common UI Strings
+// Requirement: Two-way communication system - Interface elements
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.save" = "Save";
+"common.delete" = "Delete";
+"common.error" = "Error";
+"common.success" = "Success";
+"common.loading" = "Loading...";
+"common.retry" = "Retry";
+"common.offline" = "Offline Mode";
+"common.sync_required" = "Sync Required";
+"common.no_network" = "No Network Connection";
+"common.try_again" = "Please try again";
