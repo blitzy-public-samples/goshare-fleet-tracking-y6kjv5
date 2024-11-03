@@ -1,0 +1,172 @@
+/* HUMAN TASKS:
+1. Ensure Material-UI version 4.12.0 is properly installed and configured
+2. Test responsive layouts across different device sizes
+3. Verify accessibility compliance with screen readers
+4. Test print styles with different browsers
+5. Validate cross-browser compatibility, especially for CSS Grid and Flexbox
+*/
+
+/* @material-ui/core version: ^4.12.0 */
+
+/* Import theme variables */
+@import './theme.css';
+
+/* Requirement: Web Dashboard UI Framework
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: CSS reset and base styles */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Root element styles */
+:root, html, body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--text-primary);
+  background-color: var(--background-default);
+  min-height: 100vh;
+  text-rendering: optimizeLegibility;
+}
+
+/* Typography styles */
+h1, h2, h3, h4, h5, h6, p, span, a {
+  margin-bottom: var(--spacing-sm);
+  color: inherit;
+  font-family: inherit;
+  line-height: var(--line-height-heading);
+}
+
+/* Layout styles */
+.container, .content, .wrapper {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--container-padding);
+  transition: var(--transition-duration) var(--transition-timing);
+}
+
+/* Requirement: Responsive Design
+ * Location: 4.2.1 Frontend Components/Web Dashboard
+ * Implementation: Mobile-first media queries */
+@media (max-width: 600px) {
+  html {
+    font-size: 14px;
+  }
+  .container {
+    padding: var(--spacing-sm);
+  }
+}
+
+@media (min-width: 601px) and (max-width: 960px) {
+  html {
+    font-size: 15px;
+  }
+  .container {
+    padding: var(--spacing-md);
+  }
+}
+
+/* Display utility classes */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-inline { display: inline !important; }
+.d-inline-block { display: inline-block !important; }
+.d-flex { display: flex !important; }
+.d-grid { display: grid !important; }
+
+/* Spacing utility classes */
+.m-0 { margin: 0 !important; }
+.p-0 { padding: 0 !important; }
+.mx-auto { margin-left: auto !important; margin-right: auto !important; }
+.my-auto { margin-top: auto !important; margin-bottom: auto !important; }
+.px-sm { padding-left: var(--spacing-sm) !important; padding-right: var(--spacing-sm) !important; }
+.py-sm { padding-top: var(--spacing-sm) !important; padding-bottom: var(--spacing-sm) !important; }
+.px-md { padding-left: var(--spacing-md) !important; padding-right: var(--spacing-md) !important; }
+.py-md { padding-top: var(--spacing-md) !important; padding-bottom: var(--spacing-md) !important; }
+
+/* Text utility classes */
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.text-right { text-align: right !important; }
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.text-nowrap { white-space: nowrap !important; }
+.text-break { word-break: break-word !important; }
+
+/* Flex utility classes */
+.flex-row { flex-direction: row !important; }
+.flex-column { flex-direction: column !important; }
+.justify-center { justify-content: center !important; }
+.align-center { align-items: center !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+
+/* Requirement: Cross-Platform Compatibility
+ * Location: 1.2 Scope/Performance Requirements
+ * Implementation: Accessibility styles */
+:focus-visible {
+  outline: 2px solid var(--primary-main);
+  outline-offset: 2px;
+}
+
+.screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  border: 0;
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+
+  .no-print {
+    display: none;
+  }
+
+  a[href]::after {
+    content: ' (' attr(href) ')';
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  @page {
+    margin: 2cm;
+  }
+}
+
+/* Exports */
+:export {
+  utility-classes: {
+    display: 'd-none d-block d-inline d-inline-block d-flex d-grid';
+    spacing: 'm-0 p-0 mx-auto my-auto px-sm py-sm px-md py-md';
+    text: 'text-center text-left text-right text-truncate text-nowrap text-break';
+  }
+  layout-classes: {
+    container: 'container';
+    content: 'content';
+    wrapper: 'wrapper';
+  }
+  typography-classes: {
+    headings: 'h1 h2 h3 h4 h5 h6';
+    text: 'p span a';
+  }
+}
