@@ -1,0 +1,48 @@
+// HUMAN TASKS:
+// 1. Set up MAPS_API_KEY_STAGING in build settings or CI/CD pipeline
+// 2. Configure appropriate provisioning profiles for staging environment
+// 3. Verify SSL certificate configuration for staging API endpoints
+// 4. Update any environment-specific third-party service keys
+
+// MARK: - Product Configuration
+// Implements requirement: Staging Environment Configuration
+PRODUCT_NAME = $(TARGET_NAME)_Staging
+CONFIGURATION = Staging
+
+// MARK: - Build Settings
+// Implements requirement: Pre-production Testing
+GCC_PREPROCESSOR_DEFINITIONS = STAGING=1
+SWIFT_COMPILATION_MODE = wholemodule
+SWIFT_OPTIMIZATION_LEVEL = -O
+GCC_OPTIMIZATION_LEVEL = s
+
+// MARK: - Debug Settings
+// Implements requirement: Pre-production Testing
+ENABLE_TESTABILITY = YES
+ONLY_ACTIVE_ARCH = YES
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+ENABLE_NS_ASSERTIONS = YES
+MTL_ENABLE_DEBUG_INFO = YES
+MTL_FAST_MATH = YES
+
+// MARK: - Release Settings
+// Implements requirement: Performance Requirements
+VALIDATE_PRODUCT = YES
+COPY_PHASE_STRIP = NO
+ENABLE_BITCODE = YES
+
+// MARK: - API Configuration
+// Implements requirement: Staging Environment Configuration
+// Using APIConstants.baseURL for staging environment
+API_BASE_URL = https://staging-api.fleettracker.com
+SOCKET_URL = wss://staging-api.fleettracker.com
+
+// MARK: - Third Party Integration
+// Implements requirement: Security Testing
+MAPS_API_KEY = $(MAPS_API_KEY_STAGING)
+
+// MARK: - Logging and Monitoring
+// Implements requirement: Pre-production Testing
+ENABLE_LOGGING = YES
+LOG_LEVEL = info
+ENABLE_CRASH_REPORTING = YES
