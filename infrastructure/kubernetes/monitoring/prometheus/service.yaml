@@ -1,0 +1,44 @@
+# Human Tasks:
+# 1. Verify monitoring namespace exists before applying service
+# 2. Ensure network policies allow access to port 9090 from required sources
+# 3. Configure DNS records if external access is needed
+# 4. Set up service monitors for automatic service discovery
+# 5. Verify Prometheus deployment is running before creating service
+
+# Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+# Exposes Prometheus server for monitoring system health metrics including:
+# - CPU Usage (70%/90%)
+# - Memory Usage (75%/95%)
+# - API Response Time (500ms/2000ms)
+# - Database Connections (80%/95%)
+# - Queue Length (1000/5000)
+# - Disk Usage (75%/90%)
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-server
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: server
+  annotations:
+    # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+    # Enable Prometheus to scrape its own metrics
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    kubernetes.io/description: "Prometheus monitoring service for Live Fleet Tracking System"
+spec:
+  # Requirement: Performance Requirements (1.2 Scope/Performance Requirements)
+  # Selects Prometheus server pod for stable internal access
+  selector:
+    app: prometheus
+    component: server
+  ports:
+    # Exposes Prometheus web interface and API endpoint
+    - port: 9090
+      targetPort: 9090
+      protocol: TCP
+      name: http
+  # Uses ClusterIP for secure internal access
+  # External access should be configured through Ingress if needed
+  type: ClusterIP
