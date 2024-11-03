@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- HUMAN TASKS:
+    1. Verify SSL certificate configuration for api.fleettracker.com domain
+    2. Ensure push notification certificates are properly configured in Apple Developer Portal
+    3. Configure background fetch intervals in Xcode Capabilities
+    4. Review and update privacy descriptions for location, camera, and photo library usage -->
+
+    <!-- Core Application Settings -->
+    <key>CFBundleDisplayName</key>
+    <string>Fleet Tracker</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.fleettracker.app</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>MinimumOSVersion</key>
+    <string>14.0</string>
+
+    <!-- Device Capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+        <string>gps</string>
+        <string>location-services</string>
+    </array>
+
+    <!-- Background Modes -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>fetch</string>
+        <string>remote-notification</string>
+    </array>
+
+    <!-- Location Services Permissions -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Fleet Tracker requires location access to track deliveries and provide real-time updates</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Fleet Tracker needs your location to show your position on the map and track deliveries</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Fleet Tracker needs background location access to track deliveries even when the app is not active</string>
+
+    <!-- Camera and Photo Library Permissions -->
+    <key>NSCameraUsageDescription</key>
+    <string>Fleet Tracker needs camera access to capture proof of delivery photos</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Fleet Tracker needs photo library access to save proof of delivery images</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Fleet Tracker needs permission to save proof of delivery photos to your library</string>
+
+    <!-- Network Security Configuration -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>api.fleettracker.com</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSExceptionRequiresForwardSecrecy</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.3</string>
+                <key>NSRequiresCertificateTransparency</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- Interface Orientation Support -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Storyboard Configuration -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+
+    <!-- Device Family Support -->
+    <key>UIDeviceFamily</key>
+    <array>
+        <string>1</string>
+        <string>2</string>
+    </array>
+</dict>
+</plist>
