@@ -1,0 +1,132 @@
+# Human Tasks:
+# 1. Verify cluster has sufficient resources to accommodate namespace quotas
+# 2. Configure monitoring tools to alert on quota violations
+# 3. Set up audit logging for security policy violations
+# 4. Test namespace isolation with network policies
+# 5. Validate resource quotas with sample workloads
+# 6. Ensure proper RBAC setup for namespace access
+
+# Requirement: Production Environment Configuration (4.7 Deployment Architecture/Production Environment)
+# Defines production namespace with comprehensive configuration
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    environment: production
+    security-level: high
+    monitoring: enabled
+    app: fleet-tracking
+    compliance: soc2-iso27001
+  annotations:
+    # Requirement: System Performance Requirements (1.2 Scope/Performance Requirements)
+    # Ensures proper node selection and security enforcement
+    scheduler.alpha.kubernetes.io/node-selector: "environment=production"
+    net.beta.kubernetes.io/network-policy: "enabled"
+    # Requirement: Security Architecture (4.6 Security Architecture/Security Layers)
+    # Enforces pod security standards for compliance
+    pod-security.kubernetes.io/enforce: "restricted"
+    pod-security.kubernetes.io/audit: "restricted"
+    pod-security.kubernetes.io/warn: "restricted"
+    monitoring.kubernetes.io/scrape: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  finalizers:
+    - kubernetes
+
+---
+# Requirement: System Performance Requirements (1.2 Scope/Performance Requirements)
+# Defines resource quotas for production workloads
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: production
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "unlimited"
+    requests.memory: "unlimited"
+    limits.cpu: "unlimited"
+    limits.memory: "unlimited"
+    
+    # Workload resources
+    pods: "1000"
+    services: "500"
+    secrets: "1000"
+    configmaps: "1000"
+    persistentvolumeclaims: "500"
+    
+    # Storage resources
+    requests.storage: "1Ti"
+    requests.nvidia.com/gpu: "0"
+    
+    # Service resources
+    services.loadbalancers: "10"
+    services.nodeports: "0"
+    replicationcontrollers: "500"
+    resourcequotas: "50"
+
+---
+# Requirement: Scalability Requirements (4.5 Scalability Architecture)
+# Defines default resource constraints for pods
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: production-limits
+  namespace: production
+spec:
+  limits:
+    - type: Container
+      default:
+        # Default resource limits
+        cpu: "2000m"
+        memory: "4Gi"
+      defaultRequest:
+        # Default resource requests
+        cpu: "100m"
+        memory: "256Mi"
+      max:
+        # Maximum allowed resources
+        cpu: "4000m"
+        memory: "8Gi"
+      min:
+        # Minimum required resources
+        cpu: "50m"
+        memory: "128Mi"
+    - type: Pod
+      max:
+        # Maximum pod timeouts
+        cpu: "8000m"
+        memory: "16Gi"
+    - type: PersistentVolumeClaim
+      max:
+        # Maximum storage per PVC
+        storage: "500Gi"
+      min:
+        storage: "1Gi"
+
+---
+# Requirement: Security Architecture (4.6 Security Architecture/Security Layers)
+# Applies network policies from network-policies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Requirement: Compliance Requirements (8.3.3 Security Compliance Controls)
+# Applies pod security policies from pod-security-policies.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: restricted-sa
+  namespace: production
+  annotations:
+    kubernetes.io/enforce-mountable-secrets: "true"
