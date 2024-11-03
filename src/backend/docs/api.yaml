@@ -1,0 +1,421 @@
+openapi: 3.0.0
+info:
+  title: Live Fleet Tracking System API
+  description: |
+    RESTful API documentation for the Live Fleet Tracking System with comprehensive security,
+    validation, and role-based access control. Supports real-time fleet management,
+    location tracking, route optimization, and analytics.
+  version: 1.0.0
+  contact:
+    name: Fleet Tracking System Support
+    email: support@fleettracking.com
+
+servers:
+  - url: /api/v1
+    description: API version 1
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoints
+    OAuth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: /auth/authorize
+          tokenUrl: /auth/token
+          scopes:
+            read:fleet: Read fleet data
+            write:fleet: Modify fleet data
+            read:location: Read location data
+            write:location: Update location data
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: driver@fleetco.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+        provider:
+          type: string
+          enum: [auth0, google, microsoft]
+          
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+        - phoneNumber
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          pattern: ^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phoneNumber:
+          type: string
+          pattern: ^\+?[1-9]\d{1,14}$
+        role:
+          type: string
+          enum: [admin, fleet_manager, dispatcher, driver, customer]
+          default: customer
+
+    VehicleLocation:
+      type: object
+      required:
+        - vehicleId
+        - latitude
+        - longitude
+      properties:
+        vehicleId:
+          type: string
+          example: "v-123456"
+        latitude:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          example: 40.7128
+        longitude:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          example: -74.0060
+        speed:
+          type: number
+          format: float
+          minimum: 0
+          example: 45.5
+        timestamp:
+          type: string
+          format: date-time
+
+    Vehicle:
+      type: object
+      required:
+        - registrationNumber
+        - type
+        - capacity
+      properties:
+        registrationNumber:
+          type: string
+          example: "XYZ-1234"
+        type:
+          type: string
+          enum: [truck, van, car]
+        capacity:
+          type: number
+          minimum: 0
+        status:
+          type: string
+          enum: [active, maintenance, inactive]
+          default: active
+
+    GeofenceCheck:
+      type: object
+      required:
+        - vehicleId
+        - geofenceId
+      properties:
+        vehicleId:
+          type: string
+          example: "v-123456"
+        geofenceId:
+          type: string
+          example: "geo-789"
+        timestamp:
+          type: string
+          format: date-time
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate user
+      description: Authenticates user with OAuth 2.0 + OIDC support
+      tags:
+        - Authentication
+      security:
+        - OAuth2: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refreshToken:
+                    type: string
+        '401':
+          description: Invalid credentials
+        '429':
+          description: Too many login attempts
+
+  /auth/register:
+    post:
+      summary: Register new user
+      description: Creates new user account with role-based access
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User successfully registered
+        '400':
+          description: Invalid input data
+        '409':
+          description: Email already exists
+
+  /auth/refresh-token:
+    post:
+      summary: Refresh authentication token
+      description: Generates new access token using refresh token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: New token generated
+        '401':
+          description: Invalid refresh token
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Invalidates current authentication token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+        '401':
+          description: Invalid token
+
+  /fleet/vehicles:
+    post:
+      summary: Create new vehicle
+      description: Adds new vehicle to the fleet
+      tags:
+        - Fleet Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Vehicle'
+      responses:
+        '201':
+          description: Vehicle created successfully
+        '400':
+          description: Invalid input data
+        '403':
+          description: Insufficient permissions
+
+    get:
+      summary: List vehicles
+      description: Retrieves vehicles with optional status filtering
+      tags:
+        - Fleet Management
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, maintenance, inactive]
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+      responses:
+        '200':
+          description: List of vehicles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vehicle'
+                  pagination:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      pages:
+                        type: integer
+
+  /location/update:
+    post:
+      summary: Update vehicle location
+      description: Updates real-time vehicle location with 30-second interval validation
+      tags:
+        - Location Tracking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleLocation'
+      responses:
+        '200':
+          description: Location updated successfully
+        '400':
+          description: Invalid location data or update too frequent
+        '403':
+          description: Insufficient permissions
+
+  /location/vehicle/{vehicleId}:
+    get:
+      summary: Get vehicle location
+      description: Retrieves current location of specific vehicle
+      tags:
+        - Location Tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vehicle location data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleLocation'
+        '404':
+          description: Vehicle not found
+
+  /location/history/{vehicleId}:
+    get:
+      summary: Get location history
+      description: Retrieves location history for specific vehicle
+      tags:
+        - Location Tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: vehicleId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: startTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endTime
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Vehicle location history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleLocation'
+
+  /location/geofence/check:
+    post:
+      summary: Check geofence status
+      description: Checks if vehicle is within defined geofence
+      tags:
+        - Location Tracking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GeofenceCheck'
+      responses:
+        '200':
+          description: Geofence check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inside:
+                    type: boolean
+                  distance:
+                    type: number
+                    format: float
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Fleet Management
+    description: Vehicle and fleet management operations
+  - name: Location Tracking
+    description: Real-time location tracking and geofencing
+
+security:
+  - bearerAuth: []
+  - OAuth2: []
