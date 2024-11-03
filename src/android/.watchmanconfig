@@ -1,0 +1,32 @@
+{
+  "ignore_dirs": [
+    ".git",
+    "node_modules",
+    "android/build",
+    "android/app/build",
+    "ios/build",
+    "coverage",
+    ".gradle"
+  ],
+  "fsevents_latency": 0.05,
+  "fsevents_try_resync": true,
+  "suppress_recrawl_warnings": true,
+  "root_files_override": true,
+  "enforce_root_files": true,
+  "settle_timeout": 60000,
+  "sync_mode": "full_tree",
+  "watch_rate_limit": {
+    "interval_ms": 1000,
+    "max_files": 1000
+  },
+  "watch_project_rate_limit": {
+    "interval_ms": 5000,
+    "max_files": 5000
+  },
+  "gc_age_seconds": 86400,
+  "gc_interval_seconds": 43200,
+  "trigger_settings": {
+    "stdout": true,
+    "stderr": true
+  }
+}
