@@ -1,0 +1,87 @@
+# Human Tasks:
+# 1. Create monitoring namespace before applying ConfigMap
+# 2. Verify Prometheus service is running and accessible
+# 3. Create fleet-overview.json dashboard template
+# 4. Set up SSL certificates if domain is externally accessible
+# 5. Configure admin password in separate Secret resource
+
+# Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+# Configures Grafana visualization settings for monitoring system health metrics including:
+# - CPU Usage (70%/90%)
+# - Memory Usage (75%/95%)
+# - API Response Time (500ms/2000ms)
+# - Database Connections (80%/95%)
+# - Queue Length (1000/5000)
+# - Disk Usage (75%/90%)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-config
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+    part-of: fleet-tracking-system
+data:
+  # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+  # Main Grafana configuration file
+  grafana.ini: |
+    [server]
+    protocol = http
+    http_port = 3000
+    domain = grafana.fleettracker.local
+    root_url = %(protocol)s://%(domain)s/
+
+    [auth.anonymous]
+    enabled = false
+
+    [security]
+    # Enhanced security settings for production environment
+    admin_user = admin
+    allow_embedding = true
+    cookie_secure = true
+    disable_gravatar = true
+    strict_transport_security = true
+    strict_transport_security_max_age_seconds = 31536000
+
+    [users]
+    allow_sign_up = false
+    auto_assign_org = true
+    auto_assign_org_role = Editor
+
+    # Requirement: Performance Monitoring (1.2 Scope/Performance Requirements)
+    # Dashboard configuration for tracking 99.9% uptime and performance metrics
+    [dashboards]
+    default_home_dashboard_path = /var/lib/grafana/dashboards/fleet-overview.json
+    versions_to_keep = 20
+    min_refresh_interval = 30s
+
+    [metrics]
+    enabled = true
+    basic_auth_username = metrics
+    interval_seconds = 30
+
+    [alerting]
+    enabled = true
+    execute_alerts = true
+    evaluation_timeout_seconds = 30
+    notification_timeout_seconds = 30
+    max_attempts = 3
+
+  # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+  # Prometheus data source configuration
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        # References Prometheus service endpoint
+        url: http://prometheus-server:9090
+        isDefault: true
+        version: 1
+        editable: false
+        jsonData:
+          timeInterval: "30s"
+          queryTimeout: "30s"
+          httpMethod: "POST"
