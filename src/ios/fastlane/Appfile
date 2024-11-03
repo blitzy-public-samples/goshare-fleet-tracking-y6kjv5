@@ -1,0 +1,39 @@
+# Human Tasks:
+# 1. Configure Apple Developer Portal team credentials in CI/CD environment variables
+# 2. Set up App Store Connect API key for automated deployments
+# 3. Verify team IDs match Apple Developer account settings
+# 4. Ensure certificates and provisioning profiles are properly configured in match repo
+
+# Requirements addressed:
+# - Mobile Applications (1.1): React Native driver applications for iOS with offline-first architecture
+# - iOS Deployment (4.7): Automated deployment pipeline for iOS mobile application
+# - Security Architecture (4.6): Key Management and secure certificate handling
+
+# fastlane version: 2.217.0
+
+# App identifiers for different environments
+for_platform :ios do
+  # Development environment
+  for_lane :development do
+    app_identifier "com.fleettracker.ios.dev"
+    team_id ENV["DEVELOPMENT_TEAM_ID"] # Development team ID from CI/CD environment
+    itc_team_id ENV["APP_STORE_TEAM_ID"] # App Store Connect team ID from CI/CD environment
+  end
+
+  # Staging environment
+  for_lane :staging do
+    app_identifier "com.fleettracker.ios.staging"
+    team_id ENV["DISTRIBUTION_TEAM_ID"] # Distribution team ID from CI/CD environment
+    itc_team_id ENV["APP_STORE_TEAM_ID"] # App Store Connect team ID from CI/CD environment
+  end
+
+  # Production environment
+  for_lane :production do
+    app_identifier "com.fleettracker.ios"
+    team_id ENV["DISTRIBUTION_TEAM_ID"] # Distribution team ID from CI/CD environment
+    itc_team_id ENV["APP_STORE_TEAM_ID"] # App Store Connect team ID from CI/CD environment
+  end
+
+  # Apple ID for App Store Connect authentication
+  apple_id ENV["APPLE_ID"] # Apple ID email from CI/CD environment
+end
