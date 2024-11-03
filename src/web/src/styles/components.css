@@ -1,0 +1,331 @@
+/* HUMAN TASKS:
+1. Verify Material-UI component class overrides match the installed version
+2. Test responsive layouts across different device sizes
+3. Validate accessibility compliance (WCAG 2.1)
+4. Test print stylesheet compatibility
+5. Verify RTL language support for layouts
+*/
+
+/* @material-ui/core version: ^4.12.0 */
+/* @material-ui/icons version: ^4.11.2 */
+
+@import '../styles/theme.css';
+
+/* Requirement: Web Dashboard UI Framework
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Common button component styles
+ */
+.btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: 4px;
+  font-weight: var(--font-weight-medium);
+  transition: var(--transition-duration) var(--transition-timing);
+  box-shadow: var(--elevation-1);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.btn-primary {
+  background-color: var(--primary-main);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-dark);
+  box-shadow: var(--elevation-2);
+}
+
+.btn-secondary {
+  background-color: var(--secondary-main);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--secondary-dark);
+  box-shadow: var(--elevation-2);
+}
+
+.btn-danger {
+  background-color: var(--error-main);
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #d32f2f;
+  box-shadow: var(--elevation-2);
+}
+
+/* Requirement: Dashboard Layout
+ * Location: 6.1.1 Web Dashboard Layout
+ * Implementation: Card component styles
+ */
+.card {
+  background: var(--background-paper);
+  border-radius: 8px;
+  box-shadow: var(--elevation-2);
+  margin-bottom: var(--spacing-md);
+}
+
+.card-header {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: var(--font-weight-medium);
+}
+
+.card-body {
+  padding: var(--spacing-md);
+}
+
+.card-footer {
+  padding: var(--spacing-md);
+  border-top: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Requirement: Web Dashboard UI Framework
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Form input styles
+ */
+.input,
+.select,
+.textarea {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: var(--spacing-sm);
+  width: 100%;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  transition: border-color var(--transition-duration) var(--transition-timing);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--primary-main);
+  outline: none;
+}
+
+/* Requirement: Dashboard Layout
+ * Location: 6.1.1 Web Dashboard Layout
+ * Implementation: Header component styles
+ */
+.header {
+  height: var(--header-height);
+  background: var(--background-paper);
+  box-shadow: var(--elevation-1);
+  z-index: var(--z-index-header);
+  padding: 0 var(--container-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Requirement: Dashboard Layout
+ * Location: 6.1.1 Web Dashboard Layout
+ * Implementation: Sidebar navigation styles
+ */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--background-paper);
+  border-right: 1px solid var(--border-color);
+  z-index: var(--z-index-sidebar);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding-top: var(--header-height);
+}
+
+.sidebar-nav {
+  padding: var(--spacing-md) 0;
+}
+
+.nav-item {
+  padding: var(--spacing-sm) var(--spacing-md);
+  color: var(--text-secondary);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  transition: background-color var(--transition-duration) var(--transition-timing);
+}
+
+.nav-item:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.nav-item.active {
+  color: var(--primary-main);
+  background-color: rgba(25, 118, 210, 0.08);
+}
+
+/* Requirement: Interactive Mapping
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Map component styles
+ */
+.map-container {
+  height: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--elevation-2);
+}
+
+.map-controls {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--background-paper);
+  padding: var(--spacing-sm);
+  border-radius: 4px;
+  box-shadow: var(--elevation-1);
+}
+
+.map-overlay {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: var(--spacing-md);
+  background: var(--background-paper);
+  padding: var(--spacing-md);
+  border-radius: 4px;
+  box-shadow: var(--elevation-1);
+}
+
+/* Requirement: Real-time Data Visualization
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Analytics component styles
+ */
+.chart-container {
+  background: var(--background-paper);
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  box-shadow: var(--elevation-1);
+  height: 400px;
+}
+
+.kpi-card {
+  background: var(--background-paper);
+  padding: var(--spacing-md);
+  border-radius: 8px;
+  box-shadow: var(--elevation-1);
+  text-align: center;
+}
+
+.data-grid {
+  background: var(--background-paper);
+  border-radius: 8px;
+  box-shadow: var(--elevation-1);
+  overflow: hidden;
+}
+
+/* Requirement: Cross-Platform Compatibility
+ * Location: 1.2 Scope/Performance Requirements
+ * Implementation: Responsive media queries
+ */
+@media (max-width: 600px) {
+  .sidebar {
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    top: auto;
+    left: 0;
+    height: 56px;
+    padding-top: 0;
+    border-right: none;
+    border-top: 1px solid var(--border-color);
+  }
+
+  .sidebar-nav {
+    display: flex;
+    padding: 0;
+    height: 100%;
+  }
+
+  .nav-item {
+    flex: 1;
+    justify-content: center;
+    padding: var(--spacing-xs);
+  }
+
+  .map-container {
+    height: 50vh;
+    border-radius: 0;
+  }
+
+  .header {
+    padding: 0 var(--spacing-sm);
+  }
+}
+
+@media (min-width: 601px) and (max-width: 960px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .map-container {
+    height: 60vh;
+  }
+}
+
+/* Requirement: Dashboard Layout
+ * Location: 6.1.1 Web Dashboard Layout
+ * Implementation: Flexbox utility classes
+ */
+.d-flex { display: flex; }
+.flex-row { flex-direction: row; }
+.flex-column { flex-direction: column; }
+.justify-content-center { justify-content: center; }
+.align-items-center { align-items: center; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-nowrap { flex-wrap: nowrap; }
+
+/* Requirement: Dashboard Layout
+ * Location: 6.1.1 Web Dashboard Layout
+ * Implementation: Spacing utility classes
+ */
+.m-0 { margin: 0; }
+.m-1 { margin: var(--spacing-xs); }
+.m-2 { margin: var(--spacing-sm); }
+.m-3 { margin: var(--spacing-md); }
+.m-4 { margin: var(--spacing-lg); }
+
+.p-0 { padding: 0; }
+.p-1 { padding: var(--spacing-xs); }
+.p-2 { padding: var(--spacing-sm); }
+.p-3 { padding: var(--spacing-md); }
+.p-4 { padding: var(--spacing-lg); }
+
+/* Requirement: Web Dashboard UI Framework
+ * Location: 1.1 System Overview/Web Dashboard
+ * Implementation: Animation keyframes
+ */
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+.fade-in {
+  animation: fade var(--transition-duration) var(--transition-timing);
+}
+
+.slide-in {
+  animation: slide var(--transition-duration) var(--transition-timing);
+}
