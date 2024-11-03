@@ -1,0 +1,97 @@
+# Human Tasks:
+# 1. Ensure cluster admin privileges for applying PodSecurityPolicies
+# 2. Configure RBAC roles and bindings to associate PSPs with service accounts
+# 3. Test PSP configurations in non-production environment first
+# 4. Monitor PSP violations through audit logs
+# 5. Update application deployments to comply with PSP requirements
+
+# Requirement: Security Controls (4.6 Security Architecture/Security Layers)
+# Implements restricted pod security policy for application workloads
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: restricted-psp
+  annotations:
+    kubernetes.io/description: "Default restricted policy for application pods"
+    # Requirement: Compliance Requirements (8.3.3 Security Compliance Controls)
+    # Enforces runtime security profiles for SOC 2 and ISO 27001 compliance
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  privileged: false
+  # Requirement: Container Security (9.3 Containerization)
+  # Prevents privilege escalation and requires non-root execution
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  # Defines allowed volume types for application pods
+  volumes:
+    - configMap
+    - emptyDir
+    - projected
+    - secret
+    - downwardAPI
+    - persistentVolumeClaim
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  # Requirement: Infrastructure Security (8.2 Data Security/8.2.1 Encryption Standards)
+  # Enforces non-root user execution and read-only root filesystem
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+    ranges:
+      - min: 1000
+        max: 65535
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 65535
+  readOnlyRootFilesystem: true
+  allowedHostPaths: []
+  allowedFlexVolumes: []
+  defaultAllowPrivilegeEscalation: false
+
+---
+# Requirement: Security Controls (4.6 Security Architecture/Security Layers)
+# Implements privileged pod security policy for system components
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: privileged-psp
+  annotations:
+    kubernetes.io/description: "Privileged policy for system components"
+    # Allows all security profiles for system components
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: '*'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: '*'
+spec:
+  privileged: true
+  allowPrivilegeEscalation: true
+  allowedCapabilities:
+    - '*'
+  volumes:
+    - '*'
+  hostNetwork: true
+  hostIPC: true
+  hostPID: true
+  runAsUser:
+    rule: 'RunAsAny'
+  seLinux:
+    rule: 'RunAsAny'
+  supplementalGroups:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+  readOnlyRootFilesystem: false
+  hostPorts:
+    - min: 0
+      max: 65535
