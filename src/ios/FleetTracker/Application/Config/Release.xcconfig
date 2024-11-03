@@ -1,0 +1,88 @@
+// HUMAN TASKS:
+// 1. Set up MAPS_API_KEY_PROD in Xcode project settings or CI/CD pipeline
+// 2. Verify API_BASE_URL and SOCKET_URL DNS configurations are set up for production
+// 3. Configure code signing and provisioning profiles for release builds
+// 4. Enable crash reporting service in production environment
+// 5. Set up SSL certificates for API and socket endpoints
+
+// Product Configuration
+PRODUCT_NAME = $(TARGET_NAME)
+CONFIGURATION = Release
+
+// Build Settings - Addressing Performance Requirements (1.2 Scope/Performance Requirements)
+GCC_PREPROCESSOR_DEFINITIONS = RELEASE=1
+SWIFT_COMPILATION_MODE = wholemodule
+SWIFT_OPTIMIZATION_LEVEL = -O
+GCC_OPTIMIZATION_LEVEL = s
+ENABLE_TESTABILITY = NO
+ONLY_ACTIVE_ARCH = NO
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+ENABLE_NS_ASSERTIONS = NO
+MTL_ENABLE_DEBUG_INFO = NO
+MTL_FAST_MATH = YES
+VALIDATE_PRODUCT = YES
+COPY_PHASE_STRIP = YES
+ENABLE_BITCODE = YES
+
+// Production Environment Configuration (4.7 Deployment Architecture/Environment Types)
+API_BASE_URL = https://api.fleettracker.com
+SOCKET_URL = wss://api.fleettracker.com
+MAPS_API_KEY = $(MAPS_API_KEY_PROD)
+
+// Logging and Monitoring Configuration - Supporting 99.9% uptime requirement
+ENABLE_LOGGING = YES
+LOG_LEVEL = error
+ENABLE_CRASH_REPORTING = YES
+
+// Security Configuration (8. Security Considerations/8.1 Authentication and Authorization)
+ENABLE_STRICT_SECURITY = YES
+ENABLE_SSL_PINNING = YES
+FORCE_HTTPS = YES
+ENABLE_KEYCHAIN_SHARING = YES
+
+// Performance Optimization
+CLANG_OPTIMIZATION_PROFILE_FILE = $(SRCROOT)/OptimizationProfiles/$(PROJECT_NAME).profdata
+SWIFT_WHOLE_MODULE_OPTIMIZATION = YES
+LLVM_LTO = YES
+GCC_UNROLL_LOOPS = YES
+
+// Code Generation
+CLANG_ENABLE_CODE_COVERAGE = NO
+CLANG_ENABLE_MODULES = YES
+CLANG_ENABLE_OBJC_ARC = YES
+ENABLE_STRICT_OBJC_MSGSEND = YES
+
+// Memory Management
+SWIFT_ENFORCE_EXCLUSIVE_ACCESS = off
+
+// Asset Compilation
+ASSETCATALOG_COMPILER_OPTIMIZATION = space
+
+// Deployment
+SKIP_INSTALL = NO
+DEPLOYMENT_POSTPROCESSING = YES
+STRIP_INSTALLED_PRODUCT = YES
+SEPARATE_STRIP = YES
+
+// Architecture
+ARCHS = $(ARCHS_STANDARD)
+VALID_ARCHS = arm64 arm64e
+
+// Linking
+DEAD_CODE_STRIPPING = YES
+PRESERVE_DEAD_CODE_INITS_AND_TERMS = NO
+LINK_WITH_STANDARD_LIBRARIES = YES
+
+// Packaging
+COMBINE_HIDPI_IMAGES = YES
+ENABLE_ON_DEMAND_RESOURCES = YES
+GENERATE_INFOPLIST_FILE = YES
+
+// Swift Compiler - Custom Flags
+OTHER_SWIFT_FLAGS = -D RELEASE
+
+// C Compiler - Custom Flags
+OTHER_CFLAGS = -DNS_BLOCK_ASSERTIONS=1
+
+// Linker Flags
+OTHER_LDFLAGS = -ObjC
