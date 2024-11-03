@@ -1,0 +1,216 @@
+# Human Tasks:
+# 1. Replace ${ENV} with the target environment (dev/staging/prod)
+# 2. Replace ${EFS_ID} with the AWS EFS filesystem ID for shared storage
+# 3. Ensure AWS EBS and EFS CSI drivers are installed in the cluster
+# 4. Verify storage classes gp2, gp3, and efs-sc exist in the cluster
+# 5. Configure backup solution (e.g., Velero) for volume snapshots
+
+---
+# Requirement: PostgreSQL Storage - High-performance persistent volume for PostgreSQL database
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pv-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp3
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: ${VOLUME_ID}
+    fsType: ext4
+    volumeAttributes:
+      type: gp3
+      iopsPerGB: "3000"
+      throughput: "125"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pvc-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: gp3
+  volumeMode: Filesystem
+
+---
+# Requirement: MongoDB Storage - Large capacity storage for location and event data
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mongodb-pv
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pv-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  capacity:
+    storage: 200Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: gp3
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: ${VOLUME_ID}
+    fsType: ext4
+    volumeAttributes:
+      type: gp3
+      iopsPerGB: "3000"
+      throughput: "125"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pvc-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 200Gi
+  storageClassName: gp3
+  volumeMode: Filesystem
+
+---
+# Requirement: Redis Storage - Fast I/O storage for caching and real-time processing
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: redis-pv
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pv-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  capacity:
+    storage: 50Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: gp2
+  csi:
+    driver: ebs.csi.aws.com
+    volumeHandle: ${VOLUME_ID}
+    fsType: ext4
+    volumeAttributes:
+      type: gp2
+      iopsPerGB: "3000"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pvc-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: gp2
+  volumeMode: Filesystem
+
+---
+# Requirement: File Storage - Cross-AZ shared storage for proof of delivery files
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: file-storage-pv
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pv-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  capacity:
+    storage: 1Ti
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: efs-sc
+  csi:
+    driver: efs.csi.aws.com
+    volumeHandle: ${EFS_ID}
+    volumeAttributes:
+      fileSystemId: ${EFS_ID}
+      provisioningMode: efs-ap
+      directoryPerms: "700"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: file-storage-pvc
+  labels:
+    app: fleet-tracker
+    environment: ${ENV}
+    managed-by: terraform
+    tier: storage
+  annotations:
+    kubernetes.io/pvc-protection: "true"
+    backup.velero.io/backup-volumes: "true"
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: efs-sc
+  volumeMode: Filesystem
