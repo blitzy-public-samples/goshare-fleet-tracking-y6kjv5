@@ -1,0 +1,185 @@
+# GitHub Actions workflow for iOS Fleet Tracking application CI/CD
+# Requirements addressed:
+# - Mobile Applications (1.1): iOS mobile application with offline-first architecture
+# - CI/CD Pipeline (4.7): Automated build, test, and deployment pipeline
+# - Multi-Environment Deployment (9.1): Support for dev, staging, and production
+# - Security Architecture (4.6): Secure certificate and key management
+
+name: iOS CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/ios/**'
+      - '.github/workflows/ios.yml'
+
+env:
+  DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
+  DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+  PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+  TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
+  TEMP_KEYCHAIN_USER: ${{ secrets.TEMP_KEYCHAIN_USER }}
+  MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+  FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+  MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+  APPLE_DEVELOPER_TEAM_ID: ${{ secrets.APPLE_DEVELOPER_TEAM_ID }}
+  APP_STORE_CONNECT_API_KEY_PATH: ${{ secrets.APP_STORE_CONNECT_API_KEY_PATH }}
+  WORKSPACE: "FleetTracker.xcworkspace"
+  SCHEME: "FleetTracker"
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Ruby environment
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '2.7.4'
+
+      - name: Cache Ruby gems
+        uses: actions/cache@v3
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - name: Cache Pods
+        uses: actions/cache@v3
+        with:
+          path: src/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      - name: Install Ruby dependencies
+        run: |
+          cd src/ios
+          gem install bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Install CocoaPods
+        run: |
+          cd src/ios
+          pod install
+
+      - name: Setup temporary keychain
+        run: |
+          cd src/ios
+          security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
+      - name: Setup certificates and profiles
+        run: |
+          cd src/ios
+          bundle exec fastlane sync_certificates
+
+      - name: Build and test development
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          cd src/ios
+          bundle exec fastlane build_dev
+
+      - name: Build and test staging
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          cd src/ios
+          bundle exec fastlane build_staging
+
+      - name: Build and test production
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd src/ios
+          bundle exec fastlane build_production
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: src/ios/fastlane/test_output
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain build.keychain
+
+  deploy:
+    name: Deploy
+    needs: build_and_test
+    runs-on: macos-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Setup Ruby environment
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: '2.7.4'
+
+      - name: Install Ruby dependencies
+        run: |
+          cd src/ios
+          gem install bundler
+          bundle config path vendor/bundle
+          bundle install --jobs 4 --retry 3
+
+      - name: Setup temporary keychain
+        run: |
+          cd src/ios
+          security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
+      - name: Setup certificates and profiles
+        run: |
+          cd src/ios
+          bundle exec fastlane sync_certificates
+
+      - name: Deploy to TestFlight (Staging)
+        if: github.ref == 'refs/heads/develop'
+        run: |
+          cd src/ios
+          bundle exec fastlane build_staging
+
+      - name: Deploy to App Store (Production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cd src/ios
+          bundle exec fastlane build_production
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain build.keychain
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "Deployment successful"
+          else
+            echo "Deployment failed"
+            exit 1
+          fi
