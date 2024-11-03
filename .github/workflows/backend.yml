@@ -1,0 +1,233 @@
+# REQ: CI/CD Pipeline Implementation - Automated build, test and deployment pipeline for backend services
+name: Backend CI/CD Pipeline
+
+# Trigger on push to main branch and pull requests
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+      - '.github/workflows/backend.yml'
+
+# Environment variables from specification
+env:
+  NODE_ENV: production
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  IMAGE_TAG: ${{ github.sha }}
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  PYTHON_VERSION: '3.9'
+  NODE_VERSION: '18.x'
+
+# Jobs definition
+jobs:
+  # REQ: Backend Technologies - Support for Node.js and Python microservices with automated testing
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout repository using specified version
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: src/backend/package-lock.json
+
+      # Setup Python environment for analytics service
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          cache-dependency-path: src/backend/requirements.txt
+
+      # Install Node.js dependencies
+      - name: Install Node.js Dependencies
+        working-directory: src/backend
+        run: npm ci
+
+      # Install Python dependencies
+      - name: Install Python Dependencies
+        working-directory: src/backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Run ESLint
+      - name: Run ESLint
+        working-directory: src/backend
+        run: npm run lint
+
+      # Run Node.js tests with coverage
+      - name: Run Node.js Tests
+        working-directory: src/backend
+        run: npm run test:coverage
+
+      # Run Python tests
+      - name: Run Python Tests
+        working-directory: src/backend
+        run: |
+          pytest tests/ --cov=src --cov-report=xml
+
+      # Upload test coverage
+      - name: Upload Coverage Reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: |
+            src/backend/coverage/
+            src/backend/coverage.xml
+
+  # REQ: Security Scanning - Code and container security scanning using Snyk and SonarQube
+  security-scan:
+    name: Security Scan
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Setup Snyk for security scanning
+      - name: Setup Snyk
+        uses: snyk/actions/setup@v1
+
+      # Run Snyk scan on Node.js dependencies
+      - name: Snyk Node.js Scan
+        working-directory: src/backend
+        run: snyk test --all-projects
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+
+      # Run Snyk scan on Python dependencies
+      - name: Snyk Python Scan
+        working-directory: src/backend
+        run: snyk test --file=requirements.txt
+        env:
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+
+      # Run SonarQube analysis
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@v1
+        with:
+          args: >
+            -Dsonar.projectKey=fleet-tracking-backend
+            -Dsonar.sources=src/backend/src
+            -Dsonar.tests=src/backend/tests
+            -Dsonar.javascript.lcov.reportPaths=src/backend/coverage/lcov.info
+            -Dsonar.python.coverage.reportPaths=src/backend/coverage.xml
+        env:
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+  # REQ: Container Registry Integration - Build and push container images to Amazon ECR
+  build-and-push:
+    name: Build and Push Containers
+    needs: security-scan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Login to Amazon ECR
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      # Build and push Node.js service container
+      - name: Build and Push Node.js Service
+        uses: docker/build-push-action@v4
+        with:
+          context: src/backend
+          file: src/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
+          cache-to: type=inline
+
+      # Build and push Python analytics service container
+      - name: Build and Push Analytics Service
+        uses: docker/build-push-action@v4
+        with:
+          context: src/backend
+          file: src/backend/Dockerfile.analytics
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-analytics:${{ env.IMAGE_TAG }}
+            ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-analytics:latest
+          cache-from: type=registry,ref=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}-analytics:latest
+          cache-to: type=inline
+
+  # Deploy to ECS
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Update ECS services
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service --cluster fleet-tracking-cluster \
+            --service backend-service --force-new-deployment
+          aws ecs update-service --cluster fleet-tracking-cluster \
+            --service analytics-service --force-new-deployment
+
+      # Verify deployment health
+      - name: Verify Deployment
+        run: |
+          # Wait for services to stabilize
+          aws ecs wait services-stable \
+            --cluster fleet-tracking-cluster \
+            --services backend-service analytics-service
+
+          # Check service health endpoints
+          for i in {1..30}; do
+            if curl -s ${{ secrets.BACKEND_HEALTH_URL }} | grep -q "healthy"; then
+              echo "Backend service is healthy"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Backend service health check failed"
+              exit 1
+            fi
+            sleep 10
+          done
