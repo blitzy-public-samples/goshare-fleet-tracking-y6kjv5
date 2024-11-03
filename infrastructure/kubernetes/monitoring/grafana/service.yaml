@@ -1,0 +1,47 @@
+# Human Tasks:
+# 1. Verify network policies allow inbound traffic to port 3000
+# 2. Configure external load balancer if external access is needed
+# 3. Set up SSL termination if exposing service externally
+# 4. Update DNS records if using an ingress controller
+
+# Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+# Exposes Grafana service for visualizing system health metrics including:
+# - CPU Usage (70%/90%)
+# - Memory Usage (75%/95%)
+# - API Response Time (500ms/2000ms)
+# - Database Connections (80%/95%)
+# - Queue Length (1000/5000)
+# - Disk Usage (75%/90%)
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+    part-of: fleet-tracking-system
+  annotations:
+    # Enable Prometheus metrics scraping for service monitoring
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "3000"
+    description: "Grafana service for fleet tracking system monitoring visualization"
+spec:
+  # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+  # Uses ClusterIP type for internal access within the Kubernetes cluster
+  type: ClusterIP
+  ports:
+    # Requirement: Performance Monitoring (1.2 Scope/Performance Requirements)
+    # Exposes port 3000 for monitoring visualization of:
+    # - 99.9% system uptime
+    # - Sub-second response times
+    # - 10,000+ concurrent users
+    # - 30-second maximum data latency
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+  # Selector matches the deployment labels to route traffic to Grafana pods
+  selector:
+    app: grafana
+    component: monitoring
