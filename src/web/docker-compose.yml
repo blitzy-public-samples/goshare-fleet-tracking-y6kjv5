@@ -1,0 +1,71 @@
+# Docker Compose configuration for Fleet Tracking System Web Dashboard
+# Version: 3.8
+# Requirements addressed:
+# - Web Dashboard Development Environment (1.1 System Overview)
+# - Real-time Communications (1.1 System Overview)
+# - Container Deployment (4.4.2 Backend Technologies)
+# - Performance Requirements (1.2 Scope)
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+      args:
+        - API_URL=${API_URL}
+        - SOCKET_URL=${SOCKET_URL}
+        - GOOGLE_MAPS_KEY=${GOOGLE_MAPS_KEY}
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=${API_URL}
+      - REACT_APP_SOCKET_URL=${SOCKET_URL}
+      - REACT_APP_GOOGLE_MAPS_KEY=${GOOGLE_MAPS_KEY}
+    ports:
+      - "3000:80"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./package.json:/app/package.json
+      - ./nginx:/etc/nginx/conf.d
+      - node_modules:/app/node_modules
+      - nginx-logs:/var/log/nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - fleet-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  fleet-network:
+    driver: bridge
+    enable_ipv6: false
+    internal: false
+    attachable: true
+    driver_opts:
+      com.docker.network.bridge.name: fleet-net
+
+volumes:
+  node_modules:
+    driver: local
+    driver_opts:
+      type: none
+      device: /app/node_modules
+      o: bind
+  nginx-logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: /var/log/nginx
+      o: bind
