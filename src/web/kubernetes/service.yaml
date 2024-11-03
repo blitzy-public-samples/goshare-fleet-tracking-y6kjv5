@@ -1,0 +1,113 @@
+# HUMAN TASKS:
+# 1. Verify Prometheus metrics scraping is properly configured in monitoring stack
+# 2. Ensure network policies allow traffic from ingress controller to this service
+# 3. Review and adjust load balancer settings based on traffic patterns
+# 4. Configure service mesh policies if using service mesh features
+
+---
+# REQ: Web Dashboard Access - Service configuration for React-based web application
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-dashboard-service
+  namespace: fleet-tracking
+  labels:
+    app: web-dashboard
+    component: frontend
+    part-of: fleet-tracking-system
+  annotations:
+    # REQ: High Availability - Prometheus monitoring for service health
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9113"
+    # Service mesh and load balancing annotations
+    service.kubernetes.io/topology-aware-hints: "auto"
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+spec:
+  # REQ: High Availability - Internal ClusterIP type for security
+  type: ClusterIP
+  
+  # REQ: Load Distribution - Port configuration for HTTP traffic
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    # Prometheus metrics port
+    - name: metrics
+      port: 9113
+      targetPort: 9113
+      protocol: TCP
+  
+  # REQ: Load Distribution - Selector for web dashboard pods
+  selector:
+    app: web-dashboard
+  
+  # REQ: Performance Requirements - Session affinity configuration
+  sessionAffinity: None
+  
+  # REQ: High Availability - Service configuration for reliability
+  publishNotReadyAddresses: false
+  
+  # IP family configuration
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  
+  # REQ: Load Distribution - Internal traffic policy for optimal routing
+  internalTrafficPolicy: Local
+  
+  # REQ: High Availability - Service topology configuration
+  topologyKeys:
+    - "kubernetes.io/hostname"
+    - "topology.kubernetes.io/zone"
+    - "*"
+
+---
+# REQ: Performance Requirements - Service Monitor for Prometheus metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: web-dashboard-monitor
+  namespace: fleet-tracking
+  labels:
+    app: web-dashboard
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: web-dashboard
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+  namespaceSelector:
+    matchNames:
+      - fleet-tracking
+
+---
+# REQ: High Availability - Network policy for service access
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-dashboard-service-policy
+  namespace: fleet-tracking
+spec:
+  podSelector:
+    matchLabels:
+      app: web-dashboard
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 9113
