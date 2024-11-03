@@ -1,0 +1,97 @@
+# Human Tasks:
+# 1. Create and configure grafana-secrets with admin password before deploying
+# 2. Create fleet-overview.json dashboard template and mount via ConfigMap
+# 3. Configure persistent volume claim 'grafana-storage' with appropriate size
+# 4. Verify network policies allow Prometheus data source connection
+# 5. Set up external load balancer SSL termination if required
+
+# Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+# Deploys Grafana for visualizing system metrics including CPU (70%/90%), Memory (75%/95%),
+# API Response Time (500ms/2000ms), Database Connections (80%/95%), Queue Length (1000/5000),
+# and Disk Usage (75%/90%)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+    component: monitoring
+    part-of: fleet-tracking-system
+  annotations:
+    kubernetes.io/description: "Grafana deployment for Fleet Tracking System monitoring"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+        component: monitoring
+        part-of: fleet-tracking-system
+    spec:
+      # Requirement: Security Controls (Pod Security Policy)
+      # References restricted security policy enforcing non-root execution
+      securityContext:
+        fsGroup: 472
+        runAsUser: 472
+        runAsNonRoot: true
+      containers:
+        - name: grafana
+          # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+          # Uses Grafana v9.5.3 for monitoring visualization
+          image: grafana/grafana:9.5.3
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: admin-password
+            - name: GF_AUTH_ANONYMOUS_ENABLED
+              value: "false"
+            - name: GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH
+              value: "/var/lib/grafana/dashboards/fleet-overview.json"
+            # Requirement: Performance Monitoring (1.2 Scope/Performance Requirements)
+            # Installs plugins for tracking 99.9% uptime, response times, and data latency
+            - name: GF_INSTALL_PLUGINS
+              value: "grafana-piechart-panel,grafana-worldmap-panel,grafana-googlemap-panel"
+            - name: GF_PATHS_PROVISIONING
+              value: "/etc/grafana/provisioning"
+          # Resource limits based on monitoring requirements
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+          volumeMounts:
+            - name: storage
+              mountPath: /var/lib/grafana
+          # Health monitoring configuration
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+            failureThreshold: 10
+      volumes:
+        - name: storage
+          persistentVolumeClaim:
+            # Requirement: Storage Configuration
+            # Uses GP2 storage class for cost-effective persistent storage
+            claimName: grafana-storage
