@@ -1,0 +1,133 @@
+# Human Tasks:
+# 1. Verify AWS Load Balancer configuration in your AWS account
+# 2. Configure SSL/TLS certificates for HTTPS endpoints
+# 3. Set up network policies for ingress/egress traffic
+# 4. Configure Prometheus service discovery
+# 5. Verify service mesh integration if using Istio/Linkerd
+
+# Requirement: Core Backend Services - Service configuration for Node.js and Python microservices
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-services
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: backend
+    tier: backend-services
+  annotations:
+    # Requirement: Performance Requirements - Load balancer configuration for high availability
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '9102'
+    service.beta.kubernetes.io/aws-load-balancer-type: 'nlb'
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: 'true'
+
+spec:
+  # Requirement: Scalability Architecture - Internal service type for cluster access
+  type: ClusterIP
+  
+  # Requirement: Real-time Communications - Port configuration for various services
+  ports:
+    # Main HTTP API endpoint
+    - name: http
+      port: 80
+      targetPort: 3000
+      protocol: TCP
+    
+    # WebSocket endpoint for real-time updates
+    - name: websocket
+      port: 443
+      targetPort: 3000
+      protocol: TCP
+    
+    # Analytics service endpoint
+    - name: analytics
+      port: 5000
+      targetPort: 5000
+      protocol: TCP
+
+  # Requirement: Scalability Architecture - Pod selector for service targeting
+  selector:
+    app: fleet-tracking
+    component: backend
+    tier: backend-services
+
+  # Requirement: Performance Requirements - Session affinity configuration
+  sessionAffinity: None
+  
+  # Requirement: Scalability Architecture - Internal traffic policy
+  internalTrafficPolicy: Cluster
+
+---
+# Requirement: Performance Requirements - Network policy for service access control
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-services-network-policy
+  namespace: fleet-tracking
+spec:
+  podSelector:
+    matchLabels:
+      app: fleet-tracking
+      component: backend
+      tier: backend-services
+  
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  ingress:
+    # Allow ingress from ingress-nginx namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5000
+    
+    # Allow internal cluster communication
+    - from:
+        - podSelector:
+            matchLabels:
+              app: fleet-tracking
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5000
+  
+  egress:
+    # Allow egress to backend pods
+    - to:
+        - podSelector:
+            matchLabels:
+              app: fleet-tracking
+              component: backend
+      ports:
+        - protocol: TCP
+          port: 3000
+        - protocol: TCP
+          port: 5000
+    
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Allow metrics export
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
