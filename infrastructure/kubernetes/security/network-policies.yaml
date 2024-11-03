@@ -1,0 +1,169 @@
+# Human Tasks:
+# 1. Verify that all required namespaces exist (fleet-tracking, monitoring)
+# 2. Ensure service labels match the actual pod labels in deployments
+# 3. Monitor network policy effectiveness through security logs
+# 4. Configure network policy logging for audit purposes
+# 5. Test inter-service communication after applying policies
+
+---
+# Requirement: Network Security (8.3.1 Network Security/Edge)
+# Network policy for location service implementing zero-trust principles
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: location-service-policy
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: location-service
+    security-tier: restricted
+spec:
+  podSelector:
+    matchLabels:
+      app: location-service
+  policyTypes:
+    - Ingress
+    - Egress
+  # Requirement: Zero Trust Architecture (8.2 Data Security/8.2.2 Data Protection Measures)
+  # Strictly controls inbound traffic from authorized services only
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: fleet-service
+        - podSelector:
+            matchLabels:
+              app: analytics-service
+      ports:
+        - protocol: TCP
+          port: 8080
+  # Requirement: Security Controls (4.6 Security Architecture/Security Layers)
+  # Restricts outbound traffic to MongoDB only
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mongodb
+      ports:
+        - protocol: TCP
+          port: 27017
+
+---
+# Requirement: Network Security (8.3.1 Network Security/Edge)
+# Network policy for fleet service implementing microsegmentation
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: fleet-service-policy
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: fleet-service
+    security-tier: restricted
+spec:
+  podSelector:
+    matchLabels:
+      app: fleet-service
+  policyTypes:
+    - Ingress
+    - Egress
+  # Requirement: Service Mesh (A.2 Glossary)
+  # Allows ingress only from nginx ingress controller
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+  # Requirement: Zero Trust Architecture (8.2 Data Security/8.2.2 Data Protection Measures)
+  # Restricts egress to PostgreSQL only
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgresql
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# Requirement: Network Security (8.3.1 Network Security/Edge)
+# Network policy for analytics service with strict access controls
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: analytics-service-policy
+  namespace: fleet-tracking
+  labels:
+    app: fleet-tracking
+    component: analytics-service
+    security-tier: restricted
+spec:
+  podSelector:
+    matchLabels:
+      app: analytics-service
+  policyTypes:
+    - Ingress
+    - Egress
+  # Requirement: Security Controls (4.6 Security Architecture/Security Layers)
+  # Allows ingress only from fleet service
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: fleet-service
+      ports:
+        - protocol: TCP
+          port: 8080
+  # Requirement: Zero Trust Architecture (8.2 Data Security/8.2.2 Data Protection Measures)
+  # Restricts egress to MongoDB only
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mongodb
+      ports:
+        - protocol: TCP
+          port: 27017
+
+---
+# Requirement: Network Security (8.3.1 Network Security/Edge)
+# Network policy for monitoring components implementing secure access
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: monitoring-policy
+  namespace: monitoring
+  labels:
+    app: fleet-tracking
+    component: monitoring
+    security-tier: restricted
+spec:
+  podSelector:
+    matchLabels:
+      app: prometheus
+  policyTypes:
+    - Ingress
+    - Egress
+  # Requirement: Service Mesh (A.2 Glossary)
+  # Allows ingress only from monitoring namespace
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9090
+  # Requirement: Security Controls (4.6 Security Architecture/Security Layers)
+  # Allows egress to fleet-tracking namespace for metrics collection
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: fleet-tracking
+      ports:
+        - protocol: TCP
+          port: 9100
