@@ -1,0 +1,110 @@
+# Human Tasks:
+# 1. Configure DNS records for api.fleettracking.com to point to the load balancer
+# 2. Verify Let's Encrypt certificate issuance and renewal process
+# 3. Monitor rate limiting effectiveness and adjust if needed
+# 4. Review and adjust CORS settings based on frontend requirements
+# 5. Verify TLS 1.3 enforcement across all ingress paths
+
+# Requirement: API Gateway Layer - Kubernetes Ingress resource for external access management
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend-ingress
+  namespace: fleet-tracking
+  annotations:
+    # Requirement: API Gateway Layer - NGINX Ingress Controller configuration
+    kubernetes.io/ingress.class: "nginx"
+    
+    # Requirement: Security Architecture - TLS certificate management
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Requirement: Network Security - SSL/TLS configuration
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Requirement: Performance Requirements - Request size and timeout configuration
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    
+    # Requirement: Security Architecture - CORS configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    
+    # Requirement: Security Architecture - Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+    
+    # Requirement: Performance Requirements - Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "1000"
+    
+    # Requirement: Performance Requirements - Buffer configuration
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "128k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "4"
+
+spec:
+  # Requirement: Network Security - TLS configuration
+  tls:
+    - hosts:
+        - api.fleettracking.com
+      secretName: fleet-tls-secret
+
+  # Requirement: API Gateway Layer - Routing rules configuration
+  rules:
+    - host: api.fleettracking.com
+      http:
+        paths:
+          # Requirement: Core Backend Services - Main REST API endpoints
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-services
+                port:
+                  number: 80
+
+          # Requirement: Real-time Communications - WebSocket endpoints
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-services
+                port:
+                  number: 443
+
+          # Requirement: Analytics Service - Analytics endpoints
+          - path: /analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-services
+                port:
+                  number: 5000
+
+---
+# Requirement: Network Security - Network policy for ingress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ingress-policy
+  namespace: fleet-tracking
+spec:
+  podSelector:
+    matchLabels:
+      app: fleet-tracking
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 5000
