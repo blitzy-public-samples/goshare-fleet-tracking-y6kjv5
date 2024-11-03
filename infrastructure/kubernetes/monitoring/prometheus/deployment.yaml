@@ -1,0 +1,106 @@
+# Human Tasks:
+# 1. Ensure Prometheus configuration ConfigMap 'prometheus-config' is created before deploying
+# 2. Verify PersistentVolumeClaim 'prometheus-storage' is created with correct storage class
+# 3. Configure network policies to allow Prometheus scraping
+# 4. Set up alerts in Alertmanager for defined thresholds
+# 5. Verify monitoring namespace exists and has required labels
+
+# Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+# Deploys Prometheus server to monitor system metrics with defined thresholds
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-server
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: server
+    # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+    tier: monitoring
+    version: v2.45.0
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    kubernetes.io/description: "Prometheus server deployment for Live Fleet Tracking System monitoring"
+spec:
+  # Requirement: Performance Requirements (1.2 Scope/Performance Requirements)
+  # Single replica for centralized metrics collection ensuring 99.9% uptime
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+      component: server
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: server
+    spec:
+      # Requirement: Authentication and Authorization (8.1 Authentication and Authorization)
+      # Uses monitoring service account with elevated permissions for metrics collection
+      serviceAccountName: monitoring-service-account
+      securityContext:
+        # Requirement: Security Considerations (8.2 Data Security)
+        # Run as non-root user for enhanced security
+        fsGroup: 65534
+        runAsUser: 65534
+        runAsNonRoot: true
+      containers:
+        - name: prometheus
+          # Requirement: Infrastructure Monitoring (4.4.4 Infrastructure/Technology Stack)
+          # Uses official Prometheus image v2.45.0
+          image: prom/prometheus:v2.45.0
+          args:
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            # Requirement: System Health Monitoring
+            # Retains metrics for 15 days for trend analysis
+            - --storage.tsdb.retention.time=15d
+            - --web.listen-address=:9090
+            - --web.enable-lifecycle
+            - --web.enable-admin-api
+          ports:
+            - name: http
+              containerPort: 9090
+              protocol: TCP
+          volumeMounts:
+            - name: prometheus-storage
+              mountPath: /prometheus
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+          # Requirement: System Health Monitoring (A.1.1 System Health Monitoring Thresholds)
+          # Resource limits aligned with monitoring requirements
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          # Requirement: Performance Requirements (1.2 Scope/Performance Requirements)
+          # Health probes to ensure monitoring system availability
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: http
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+      volumes:
+        # Requirement: System Health Monitoring
+        # Persistent storage for long-term metrics retention
+        - name: prometheus-storage
+          persistentVolumeClaim:
+            # Uses GP2 storage class for cost-effective metrics storage
+            claimName: prometheus-storage
+        # Requirement: System Health Monitoring
+        # Configuration volume for Prometheus scrape configs and rules
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+            defaultMode: 420
