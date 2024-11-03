@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-specific Android Manifest Overlay -->
+<!-- Requirements addressed:
+     - Development Environment Configuration (4.7 Deployment Architecture/Development Environment)
+     - React Native Mobile Applications (1.1 System Overview/Mobile Applications)
+     - Offline Operation Support Testing (1.2 Scope/Performance Requirements)
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.fleettracker">
+
+    <!-- Debug-specific permissions -->
+    <!-- Required for React Native development menu and debugging -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    
+    <!-- Required for location testing and simulation -->
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION" />
+
+    <application
+        android:debuggable="true"
+        android:usesCleartextTraffic="true"
+        tools:targetApi="28"
+        tools:replace="android:usesCleartextTraffic">
+
+        <!-- React Native Debug Settings Activity -->
+        <activity
+            android:name="com.facebook.react.devsupport.DevSettingsActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme" />
+
+    </application>
+
+</manifest>
