@@ -1,0 +1,112 @@
+# Human Tasks:
+# 1. Ensure cluster admin privileges for applying namespace configurations
+# 2. Verify network connectivity between development and monitoring namespaces
+# 3. Configure cluster-level pod security policies before applying namespace config
+# 4. Set up monitoring tools to track resource quota usage
+# 5. Review and adjust resource quotas based on actual development team needs
+
+# Requirement: Environment Isolation
+# Defines development namespace with isolated resources and configurations
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: development
+  labels:
+    name: development
+    environment: dev
+    security-level: restricted
+  annotations:
+    security.kubernetes.io/enforce-pod-security: restricted
+    security.kubernetes.io/pod-security-warnings: "true"
+spec:
+  finalizers:
+    - kubernetes
+
+---
+# Requirement: Kubernetes Orchestration
+# Implements resource quotas for controlled resource allocation
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-compute-resources
+  namespace: development
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+    pods: "20"
+    services: "10"
+    configmaps: "20"
+    secrets: "20"
+    persistentvolumeclaims: "10"
+
+---
+# Requirement: Kubernetes Orchestration
+# Defines container resource limits and requests
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-limits
+  namespace: development
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "250m"
+        memory: "256Mi"
+      max:
+        cpu: "2"
+        memory: "2Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"
+
+---
+# Requirement: Security Controls
+# Implements network policies for secure communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-network-policy
+  namespace: development
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow traffic from within development namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: development
+    # Allow monitoring namespace access for metrics collection
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+      ports:
+        - port: 9090
+          protocol: TCP
+  egress:
+    # Allow access to cluster services
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/cluster-service: "true"
+    # Allow DNS resolution
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32  # Block access to metadata API
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
