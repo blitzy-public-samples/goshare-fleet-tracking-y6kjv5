@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <!-- Requirements addressed: Mobile Applications - iOS driver application workspace configuration supporting offline-first architecture, GPS integration, and digital proof of delivery capabilities -->
+   <FileRef
+      location = "self:">
+   </FileRef>
+   <!-- Requirements addressed: Cross-platform compatibility - iOS platform workspace configuration and development settings -->
+   <FileRef
+      location = "group:FleetTracker.xcodeproj">
+   </FileRef>
+   <!-- Requirements addressed: Offline operation support - Workspace configuration supporting offline data handling capabilities -->
+   <FileRef
+      location = "group:Pods/Pods.xcodeproj">
+   </FileRef>
+</Workspace>
