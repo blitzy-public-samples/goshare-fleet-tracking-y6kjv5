@@ -1,0 +1,83 @@
+# Buck build system configuration for Fleet Tracker Android app
+# Addresses requirements:
+# - Mobile Applications: React Native driver app with native performance optimization
+# - Offline Architecture: Efficient build and packaging configuration
+# - Performance Requirements: Cross-platform compatibility and offline operation support
+
+[android]
+# Android SDK and build tools configuration aligned with build.gradle
+build_tools_version = 33.0.0
+target = Google Inc.:Google APIs:33
+# Debug keystore location for development builds
+keystore = //android/keystores:debug.keystore
+
+[alias]
+# Build target aliases for simplified references
+react-native = //android/app:react-native
+app = //android/app:app
+
+[java]
+# Java compilation settings for native modules and background services
+src_roots = [
+    java,
+    kotlin
+]
+source_level = 1.8
+target_level = 1.8
+
+[ndk]
+# Native development kit configuration for location and offline storage modules
+cpu_abis = [
+    armeabi-v7a,
+    arm64-v8a,
+    x86,
+    x86_64
+]
+compiler = clang
+app_platform = android-21
+
+[parser]
+# Buck parser configuration for build file processing
+default_build_file_syntax = SKYLARK
+py_interpreter = python3
+
+[cache]
+# Build cache configuration for improved build performance
+mode = dir
+dir = buck-out/cache
+
+[project]
+# Project-wide build settings
+ignore = .git, .idea, build, buck-out
+parallel_parsing = true
+build_file_name = BUCK
+
+[resources]
+# Resource processing configuration
+resource_compression_enabled = true
+aapt2_enabled = true
+
+[tools]
+# External tool configurations
+proguard = proguard-6.2.2
+android_sdk = /opt/android_sdk
+
+[buildfile]
+# Build file parsing and execution settings
+glob_handler = watchman
+warn_about_deprecated_syntax = true
+
+[download]
+# Download cache settings for external dependencies
+in_memory_cache_size = 1GB
+http_timeout = 60000
+
+[httpserver]
+# Buck HTTP server configuration for build process
+port = 0
+list_files = true
+
+[test]
+# Test execution configuration
+threads = 4
+timeout = 300000
